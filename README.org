@@ -1,0 +1,17 @@
+* domestobot
+Your own trusty housekeeper
+[[https://gta.fandom.com/wiki/Domestobot?file=Domestobot-GTAVCS-Front.png]]
+
+** Description
+A python command line app to maintain my *nix systems. It helps me with
+stuff like upgrading OSes, upgrading [[https://github.com/hlissner/doom-emacs][Doom Emacs]] or running my backup tools.
+Domestobot is a robotic servant from the [[https://gta.fandom.com/wiki/Domestobot][GTA series]].
+
+** Usage
+Just clone the repo and install it using pip, or preferably [[https://pipxproject.github.io/pipx/][Pipx]]:
+
+#+begin_src shell
+pipx install -e /path/to/domestobot
+#+end_src
+
+Then run =domestobot --help= to see what it can do.
