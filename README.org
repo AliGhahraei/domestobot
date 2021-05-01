@@ -1,6 +1,6 @@
 * domestobot
 Your own trusty housekeeper
-[[https://gta.fandom.com/wiki/Domestobot?file=Domestobot-GTAVCS-Front.png]]
+[[https://static.wikia.nocookie.net/gtawiki/images/2/20/Domestobot-GTAVCS-Front.png]]
 
 ** Description
 A python command line app to maintain my *nix systems. It helps me with
