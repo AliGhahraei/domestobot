@@ -1,5 +1,6 @@
 * domestobot
 Your own trusty housekeeper
+
 [[https://static.wikia.nocookie.net/gtawiki/images/2/20/Domestobot-GTAVCS-Front.png]]
 
 ** Description
