@@ -1,3 +1,4 @@
 -c requirements.txt
 -c test_requirements.txt
+mypy
 pip-tools

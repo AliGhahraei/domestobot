@@ -2,8 +2,9 @@
 from os import listdir
 from os.path import expanduser, join
 from platform import system
+from typing import Callable, cast
 
-from sh import git, doom, fish, pipx, ErrorReturnCode_128
+from sh import git, doom, fish, pipx, RunningCommand, ErrorReturnCode_128
 from typer import Context, Typer
 
 from domestobot.core import info, task_title, title, warning
@@ -16,7 +17,7 @@ app = Typer()
 
 
 @app.callback(invoke_without_command=True)
-def main(ctx: Context):
+def main(ctx: Context) -> None:
     """Your own trusty housekeeper.
 
     Run without specifying a command to perform all upgrades and check repos.
@@ -32,7 +33,7 @@ def main(ctx: Context):
 
 
 @app.command()
-def upgrade_fisher():
+def upgrade_fisher() -> None:
     """Upgrade Fish package manager (Linux only)."""
     if system() == 'Linux':
         title('Upgrading fisher')
@@ -40,23 +41,23 @@ def upgrade_fisher():
 
 
 @app.command()
-def upgrade_os():
+def upgrade_os() -> None:
     """Upgrade using native package manager (Homebrew/Arch's Paru only)."""
-    def get_macos_commands():
+    def get_macos_commands() -> Callable[[], None]:
         from sh import brew
 
         @task_title('Upgrading with brew')
-        def upgrade_macos():
+        def upgrade_macos() -> None:
             brew('update', _fg=True)
             brew('upgrade', _fg=True)
 
         return upgrade_macos
 
-    def get_arch_linux_commands():
+    def get_arch_linux_commands() -> Callable[[], None]:
         from sh import paru
 
         @task_title('Upgrading with paru')
-        def upgrade_arch():
+        def upgrade_arch() -> None:
             paru(_fg=True)
 
         return upgrade_arch
@@ -69,30 +70,30 @@ def upgrade_os():
     try:
         upgrade_os = os_upgrade_commands[current_platform]()
     except KeyError:
-        def upgrade_os():
+        def upgrade_os() -> None:
             warning(f"Package managers for {current_platform} aren't"
                     f"supported")
     upgrade_os()
 
 
 @app.command()
-def upgrade_python_tools():
+def upgrade_python_tools() -> None:
     """Upgrade Pipx tool and packages."""
     title('Upgrading pipx and packages')
     pipx('upgrade-all', _fg=True)
 
 
 @app.command()
-def upgrade_doom():
+def upgrade_doom() -> None:
     """Upgrade Doom Emacs distribution."""
     title('Upgrading doom')
     doom('upgrade', _fg=True)
 
 
 @app.command()
-def check_repos_clean(gitdir: str = GIT_DIR):
+def check_repos_clean(gitdir: str = GIT_DIR) -> None:
     """Check if repos in gitdir (~/g by default) have unpublished work."""
-    def is_tree_dirty(dir_):
+    def is_tree_dirty(dir_: str) -> bool:
         try:
             unsaved_changes = git('-C', dir_, 'status',
                                   '--ignore-submodules', '--porcelain')
@@ -107,10 +108,10 @@ def check_repos_clean(gitdir: str = GIT_DIR):
         ])
         return is_dirty
 
-    def decode_output(output):
-        return output.stdout.decode('utf-8')
+    def decode_output(output: RunningCommand) -> str:
+        return cast(str, output.stdout.decode('utf-8'))
 
-    def is_not_empty_ignoring_escape_sequences(unpushed_commits_output):
+    def is_not_empty_ignoring_escape_sequences(unpushed_commits_output: RunningCommand) -> bool:
         return (_SUBSTRING_ALWAYS_PRESENT_IN_NON_EMPTY_OUTPUT
                 in decode_output(unpushed_commits_output))
 
