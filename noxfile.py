@@ -17,4 +17,4 @@ def install_package(session):
 def typing(session):
     install_package(session)
     session.install('-r', reqs('typing_requirements.txt'))
-    session.run('mypy', 'domestobot')
+    session.run('mypy')
