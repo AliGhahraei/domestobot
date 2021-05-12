@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 from os import listdir
-from os.path import expanduser, join
+from pathlib import Path
 from platform import system
-from typing import Callable, cast
+from subprocess import CalledProcessError, CompletedProcess
+from sys import exit
+from typing import Any, Callable
 
-from sh import git, doom, fish, pipx, RunningCommand, ErrorReturnCode_128
 from typer import Context, Typer
 
-from domestobot.core import info, task_title, title, warning
+from domestobot.core import info, run_command, task_title, title, warning
 
 
 _SUBSTRING_ALWAYS_PRESENT_IN_NON_EMPTY_OUTPUT = '->'
-GIT_DIR = expanduser(join('~', 'g'))
+GIT_DIR = Path.home() / 'g'
 
-app = Typer()
+app = Typer(context_settings={'obj': run_command})
 
 
 @app.callback(invoke_without_command=True)
-def main(ctx: Context) -> None:
+def main(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
     """Your own trusty housekeeper.
 
     Run without specifying a command to perform all upgrades and check repos.
@@ -25,40 +26,36 @@ def main(ctx: Context) -> None:
     (e.g. `domestobot upgrade-doom --help`).
     """
     if ctx.invoked_subcommand is None:
-        upgrade_fisher()
-        upgrade_os()
-        upgrade_python_tools()
-        upgrade_doom()
-        check_repos_clean()
+        upgrade_fisher(ctx)
+        upgrade_os(ctx)
+        upgrade_python_tools(ctx)
+        upgrade_doom(ctx)
+        check_repos_clean(ctx, gitdir)
 
 
 @app.command()
-def upgrade_fisher() -> None:
+def upgrade_fisher(ctx: Context) -> None:
     """Upgrade Fish package manager (Linux only)."""
     if system() == 'Linux':
         title('Upgrading fisher')
-        fish('-c', 'fisher update', _fg=True)
+        ctx.obj('fish', '-c', 'fisher update')
 
 
 @app.command()
-def upgrade_os() -> None:
+def upgrade_os(ctx: Context) -> None:
     """Upgrade using native package manager (Homebrew/Arch's Paru only)."""
     def get_macos_commands() -> Callable[[], None]:
-        from sh import brew
-
         @task_title('Upgrading with brew')
         def upgrade_macos() -> None:
-            brew('update', _fg=True)
-            brew('upgrade', _fg=True)
+            ctx.obj('brew', 'update')
+            ctx.obj('brew', 'upgrade')
 
         return upgrade_macos
 
     def get_arch_linux_commands() -> Callable[[], None]:
-        from sh import paru
-
         @task_title('Upgrading with paru')
         def upgrade_arch() -> None:
-            paru(_fg=True)
+            ctx.obj('paru')
 
         return upgrade_arch
 
@@ -72,54 +69,60 @@ def upgrade_os() -> None:
     except KeyError:
         def upgrade_os() -> None:
             warning(f"Package managers for {current_platform} aren't"
-                    f"supported")
+                    f" supported")
     upgrade_os()
 
 
 @app.command()
-def upgrade_python_tools() -> None:
+def upgrade_python_tools(ctx: Context) -> None:
     """Upgrade Pipx tool and packages."""
     title('Upgrading pipx and packages')
-    pipx('upgrade-all', _fg=True)
+    ctx.obj('pipx', 'upgrade-all')
 
 
 @app.command()
-def upgrade_doom() -> None:
+def upgrade_doom(ctx: Context) -> None:
     """Upgrade Doom Emacs distribution."""
     title('Upgrading doom')
-    doom('upgrade', _fg=True)
+    ctx.obj('doom', 'upgrade')
 
 
 @app.command()
-def check_repos_clean(gitdir: str = GIT_DIR) -> None:
-    """Check if repos in gitdir (~/g by default) have unpublished work."""
-    def is_tree_dirty(dir_: str) -> bool:
+def check_repos_clean(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
+    """Check if repos in gitdir have unpublished work."""
+    def is_tree_dirty(dir_: Path) -> bool:
         try:
-            unsaved_changes = git('-C', dir_, 'status',
-                                  '--ignore-submodules', '--porcelain')
-            unpushed_commits = git('-C', dir_, 'log', '--branches',
-                                       '--not', '--remotes', '--oneline')
-        except ErrorReturnCode_128 as e:
-            raise ValueError(f'Invalid repository: {dir_}') from e
-
-        is_dirty = any([
-            decode_output(unsaved_changes),
-            is_not_empty_ignoring_escape_sequences(unpushed_commits),
-        ])
+            is_dirty = _has_unsaved_changes(dir_) or _has_unpushed_commits(dir_)
+        except CalledProcessError as e:
+            if e.returncode == 128:
+                exit(f'Not a git repository: {dir_}')
+            else:
+                raise
         return is_dirty
 
-    def decode_output(output: RunningCommand) -> str:
-        return cast(str, output.stdout.decode('utf-8'))
+    def _has_unsaved_changes(dir_: Path) -> bool:
+        unsaved_changes = ctx.obj(
+            'git', '-C', dir_, 'status', '--ignore-submodules', '--porcelain',
+            capture_output=True,
+        )
+        return bool(_decode(unsaved_changes))
 
-    def is_not_empty_ignoring_escape_sequences(unpushed_commits_output: RunningCommand) -> bool:
+    def _has_unpushed_commits(dir_: Path) -> bool:
+        unpushed_commits = ctx.obj(
+            'git', '-C', dir_, 'log', '--branches', '--not', '--remotes',
+            '--oneline', capture_output=True,
+        )
         return (_SUBSTRING_ALWAYS_PRESENT_IN_NON_EMPTY_OUTPUT
-                in decode_output(unpushed_commits_output))
+                in _decode(unpushed_commits))
+
+    def _decode(command_output: CompletedProcess[bytes]) -> str:
+        return command_output.stdout.decode('utf-8')
+
 
     title('Checking git repos')
-    all_repos = [join(gitdir, repo) for repo in listdir(gitdir)]
-    dirty_repos = [repo for repo in all_repos if is_tree_dirty(repo)]
+    dirty_repos = [repo for repo in gitdir.iterdir() if is_tree_dirty(repo)]
     if dirty_repos:
         for repo in dirty_repos:
-            warning(f"{repo}'s tree was not clean")
+            warning(f"Repository in {repo} was not clean")
     else:
         info("Everything's clean!")

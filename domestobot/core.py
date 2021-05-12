@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from functools import wraps
+from subprocess import CompletedProcess, run
 from typing import Callable, Any
 
 from typer import style
@@ -31,3 +32,7 @@ def warning(message: str) -> None:
 
 def _colorize(message: str, foreground: str, **kwargs: Any) -> str:
     return style(message, foreground, **kwargs)
+
+
+def run_command(*args: str, **kwargs: Any) -> CompletedProcess[bytes]:
+    return run(args, check=True, **kwargs)
