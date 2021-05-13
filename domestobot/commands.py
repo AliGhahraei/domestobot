@@ -10,7 +10,6 @@ from typer import Context, Typer
 
 from domestobot.core import info, run_command, task_title, title, warning
 
-
 _SUBSTRING_ALWAYS_PRESENT_IN_NON_EMPTY_OUTPUT = '->'
 GIT_DIR = Path.home() / 'g'
 

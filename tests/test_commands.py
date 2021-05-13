@@ -2,14 +2,13 @@
 from pathlib import Path
 from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Optional, Protocol, Tuple, Union
-from unittest.mock import Mock, patch, call
-
-from domestobot.commands import app
+from unittest.mock import Mock, call, patch
 
 from click.testing import Result
-from pytest import fixture, FixtureRequest
+from pytest import FixtureRequest, fixture
 from typer.testing import CliRunner
 
+from domestobot.commands import app
 
 LINUX = 'Linux'
 DARWIN = 'Darwin'

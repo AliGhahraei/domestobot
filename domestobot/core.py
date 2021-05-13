@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from functools import wraps
 from subprocess import CompletedProcess, run
-from typing import Callable, Any
+from typing import Any, Callable
 
 from typer import style
 

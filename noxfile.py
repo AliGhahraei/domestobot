@@ -3,6 +3,8 @@ from os.path import join
 
 import nox
 
+PYTHON_FILES = ['domestobot', 'tests', '*.py']
+
 
 def install_reqs(requirements_file, session):
     session.install('-r', join('requirements', requirements_file))
@@ -31,3 +33,9 @@ def typing(session):
     install_test_packages(session)
     install_reqs('typing_requirements.txt', session)
     session.run('mypy')
+
+
+@nox.session
+def linting(session):
+    install_reqs('linting_requirements.txt', session)
+    session.run('isort', '--check-only', *PYTHON_FILES)
