@@ -4,17 +4,17 @@ from os.path import join
 import nox
 
 
-def reqs(requirements_file):
-    return join('requirements', requirements_file)
+def install_reqs(requirements_file, session):
+    session.install('-r', join('requirements', requirements_file))
 
 
 def install_package(session):
-    session.install('-r', reqs('requirements.txt'))
+    install_reqs('requirements.txt', session)
     session.install('.')
 
 
 def install_test_packages(session):
-    session.install("-r", reqs("test_requirements.txt"))
+    install_reqs('test_requirements.txt', session)
 
 
 @nox.session
@@ -29,5 +29,5 @@ def tests(session):
 def typing(session):
     install_package(session)
     install_test_packages(session)
-    session.install('-r', reqs('typing_requirements.txt'))
+    install_reqs('typing_requirements.txt', session)
     session.run('mypy')
