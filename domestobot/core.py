@@ -6,9 +6,11 @@ from typing import Any, Callable
 from typer import style
 
 
-def task_title(message: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def task_title(message: str) \
+        -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
-        wraps(f)
+
+        @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             title(message)
             return f(*args, **kwargs)

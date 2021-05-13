@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+from glob import glob
 from os.path import join
 
 import nox
 
-PYTHON_FILES = ['domestobot', 'tests', '*.py']
+PYTHON_FILES = 'domestobot', 'tests', *glob('*.py')
 
 
 def install_reqs(requirements_file, session):
@@ -39,3 +40,4 @@ def typing(session):
 def linting(session):
     install_reqs('linting_requirements.txt', session)
     session.run('isort', '--check-only', *PYTHON_FILES)
+    session.run('flake8', *PYTHON_FILES)

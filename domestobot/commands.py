@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-from os import listdir
 from pathlib import Path
 from platform import system
 from subprocess import CalledProcessError, CompletedProcess
 from sys import exit
-from typing import Any, Callable
+from typing import Callable
 
 from typer import Context, Typer
 
@@ -91,7 +90,8 @@ def check_repos_clean(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
     """Check if repos in gitdir have unpublished work."""
     def is_tree_dirty(dir_: Path) -> bool:
         try:
-            is_dirty = _has_unsaved_changes(dir_) or _has_unpushed_commits(dir_)
+            is_dirty = (_has_unsaved_changes(dir_)
+                        or _has_unpushed_commits(dir_))
         except CalledProcessError as e:
             if e.returncode == 128:
                 exit(f'Not a git repository: {dir_}')
@@ -116,7 +116,6 @@ def check_repos_clean(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
 
     def _decode(command_output: CompletedProcess[bytes]) -> str:
         return command_output.stdout.decode('utf-8')
-
 
     title('Checking git repos')
     dirty_repos = [repo for repo in gitdir.iterdir() if is_tree_dirty(repo)]

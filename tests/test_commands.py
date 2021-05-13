@@ -215,7 +215,8 @@ class TestCheckReposClean:
     ) -> None:
         runner = Mock(side_effect=[
             CompletedProcess([], 0, b''),
-            CompletedProcess([], 0, b'a9a152e (HEAD -> main) Create fake commit'),
+            CompletedProcess([], 0,
+                             b'a9a152e (HEAD -> main) Create fake commit'),
         ])
         result = invoke('check-repos-clean', '--gitdir', str(tmp_path),
                         runner=runner)
