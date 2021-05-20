@@ -9,10 +9,31 @@ stuff like upgrading OSes, upgrading [[https://github.com/hlissner/doom-emacs][D
 Domestobot is a robotic servant from the [[https://gta.fandom.com/wiki/Domestobot][GTA series]].
 
 ** Usage
-Just clone the repo and install it using pip, or preferably [[https://pipxproject.github.io/pipx/][Pipx]]:
+Just clone the repo and install it using pip, or preferably [[https://pipxproject.github.io/pipx/][pipx]]:
 
 #+begin_src shell
 pipx install -e /path/to/domestobot
 #+end_src
 
 Then run =domestobot --help= to see what it can do.
+
+** Development
+To get a working environment, you should install [[https://github.com/jazzband/pip-tools][pip-tools]] inside a
+virtualenv and use [[https://pydoit.org/][doit]] to install the necessary requirements:
+
+#+begin_src shell
+doit sync
+#+end_src
+
+Doit can also sort import statements, update requirements, etc. You can see
+available commands with =doit list=.
+
+
+To run a local build (including unit tests), run [[https://nox.thea.codes/en/stable/][nox]] inside the project
+directory:
+
+#+begin_src shell
+nox
+#+end_src
+
+This same command is run by Github Actions for every pushed commit.

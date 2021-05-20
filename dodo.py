@@ -8,10 +8,29 @@ from doit.action import CmdAction
 from doit.tools import result_dep
 
 MAIN_REQUIREMENTS_SOURCE = 'pyproject.toml'
+MAIN_REQUIREMENTS_FILE = 'requirements.txt'
+EXTRA_DEPENDENCIES = {
+    'linting_requirements.txt': [],
+    'test_requirements.txt': [MAIN_REQUIREMENTS_FILE],
+    'typing_requirements.txt': [MAIN_REQUIREMENTS_FILE],
+}
+
+
+def task_sync():
+    """Install all necessary requirements in current environment.
+
+    Easiest way to get a working development environment.
+    Compile requirements files if not up-to-date and install them using
+    pip-sync, then run pip install -e .
+    """
+    return {
+        'actions': ['pip-sync requirements/*.txt', 'pip install -e .'],
+        'uptodate': [result_dep('compile')],
+    }
 
 
 def task_sort_imports():
-    """Sort import statements in the project's python files """
+    """Sort import statements in the project's python files."""
     for filepath in glob('**/*.py', recursive=True):
         yield {
             'name': filepath,
@@ -21,7 +40,12 @@ def task_sort_imports():
 
 
 def task_compile():
-    """Run pip-compile for the requirements files"""
+    """Add or update requirements using *.in files as input.
+
+    Run pip-compile to detect changes in source files and add them to *.txt
+    files. This will not upgrade versions if it is not necessary, but passing
+    upgrade=True will upgrade all dependencies.
+    """
     upgrade = get_var('upgrade', False)
     extra_args = ' --upgrade' if upgrade else ''
 
@@ -43,23 +67,9 @@ def task_compile():
 
 def generate_requirements():
     requirements_path = Path('requirements')
-    main_target = 'requirements.txt'
-    extra_requirements = {
-        'linting_requirements.txt': [],
-        'test_requirements.txt': [main_target],
-        'typing_requirements.txt': [main_target],
-    }
+    yield requirements_path / MAIN_REQUIREMENTS_FILE, [MAIN_REQUIREMENTS_SOURCE]
 
-    yield requirements_path / main_target, [MAIN_REQUIREMENTS_SOURCE]
-    for target, extra_deps in extra_requirements.items():
+    for target, extra_deps in EXTRA_DEPENDENCIES.items():
         dep_path = requirements_path / f'{Path(target).stem}.in'
         extra_deps_paths = [requirements_path / dep for dep in extra_deps]
         yield requirements_path / target, [dep_path, *extra_deps_paths]
-
-
-def task_sync():
-    """Run pip-sync for the requirements files and then pip install -e ."""
-    return {
-        'actions': ['pip-sync requirements/*.txt', 'pip install -e .'],
-        'uptodate': [result_dep('compile')],
-    }
