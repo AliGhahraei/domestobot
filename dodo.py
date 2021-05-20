@@ -67,7 +67,8 @@ def task_compile():
 
 def generate_requirements():
     requirements_path = Path('requirements')
-    yield requirements_path / MAIN_REQUIREMENTS_FILE, [MAIN_REQUIREMENTS_SOURCE]
+    main_requirements_path = requirements_path / MAIN_REQUIREMENTS_FILE
+    yield main_requirements_path, [MAIN_REQUIREMENTS_SOURCE]
 
     for target, extra_deps in EXTRA_DEPENDENCIES.items():
         dep_path = requirements_path / f'{Path(target).stem}.in'
