@@ -47,7 +47,7 @@ def task_compile():
     upgrade=True will upgrade all dependencies.
     """
     upgrade = get_var('upgrade', False)
-    extra_args = ' --upgrade' if upgrade else ''
+    extra_args = '--upgrade' if upgrade else ''
 
     def action(dependencies, targets):
         return (f'pip-compile --allow-unsafe --generate-hashes'
