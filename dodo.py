@@ -48,7 +48,7 @@ def task_compile():
     """
     upgrade = get_var('upgrade', False)
     extra_args = '--upgrade' if upgrade else ''
-    env = {**os.environ.copy(), 'CUSTOM_COMPILE_COMMAND': 'doit compile'}
+    env = {**os.environ, 'CUSTOM_COMPILE_COMMAND': 'doit compile'}
 
     for target, deps in generate_requirements():
         command = (f'pip-compile --allow-unsafe --generate-hashes {deps[0]} '
