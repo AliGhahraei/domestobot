@@ -7,7 +7,7 @@ from doit import get_var
 from doit.action import CmdAction
 from doit.tools import result_dep
 
-MAIN_REQUIREMENTS_SOURCE = 'pyproject.toml'
+MAIN_REQUIREMENTS_SOURCE = 'setup.cfg'
 MAIN_REQUIREMENTS_FILE = 'requirements.txt'
 EXTRA_DEPENDENCIES = {
     'linting_requirements.txt': [],
