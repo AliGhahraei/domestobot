@@ -48,19 +48,16 @@ def task_compile():
     """
     upgrade = get_var('upgrade', False)
     extra_args = '--upgrade' if upgrade else ''
-
-    def action(dependencies, targets):
-        return (f'pip-compile --allow-unsafe --generate-hashes'
-                f' {dependencies[0]} --output-file {targets[0]} {extra_args}')
-
     env = {**os.environ.copy(), 'CUSTOM_COMPILE_COMMAND': 'doit compile'}
-    cmd_action = CmdAction(action, env=env)
+
     for target, deps in generate_requirements():
+        command = (f'pip-compile --allow-unsafe --generate-hashes {deps[0]} '
+                   f'--output-file {target} {extra_args}')
         yield {
             'name': target,
             'file_dep': deps,
             'targets': [target],
-            'actions': [cmd_action],
+            'actions': [CmdAction(command, env=env)],
             'uptodate': [not upgrade]
         }
 
