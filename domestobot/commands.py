@@ -3,20 +3,30 @@ from pathlib import Path
 from platform import system
 from subprocess import CalledProcessError, CompletedProcess
 from sys import exit
-from typing import Callable
+from typing import Callable, Protocol, Union
 
 from typer import Context, Typer
 
-from domestobot.core import info, run_command, task_title, title, warning
+from domestobot.core import AppObject, info, task_title, title, warning
 
 _SUBSTRING_ALWAYS_PRESENT_IN_NON_EMPTY_OUTPUT = '->'
 GIT_DIR = Path.home() / 'g'
 
-app = Typer(context_settings={'obj': run_command})
+app = Typer(context_settings={'obj': AppObject()})
+
+
+class RunnerContext(Context):
+    obj: 'CommandRunner'
+
+
+class CommandRunner(Protocol):
+    def run(self, *args: Union[str, Path], capture_output: bool = False) \
+      -> CompletedProcess[bytes]:
+        pass
 
 
 @app.callback(invoke_without_command=True)
-def main(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
+def main(ctx: RunnerContext, gitdir: Path = Path(GIT_DIR)) -> None:
     """Your own trusty housekeeper.
 
     Run without specifying a command to perform all upgrades and check repos.
@@ -32,28 +42,28 @@ def main(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
 
 
 @app.command()
-def upgrade_fisher(ctx: Context) -> None:
+def upgrade_fisher(ctx: RunnerContext) -> None:
     """Upgrade Fish package manager (Linux only)."""
     if system() == 'Linux':
         title('Upgrading fisher')
-        ctx.obj('fish', '-c', 'fisher update')
+        ctx.obj.run('fish', '-c', 'fisher update')
 
 
 @app.command()
-def upgrade_os(ctx: Context) -> None:
+def upgrade_os(ctx: RunnerContext) -> None:
     """Upgrade using native package manager (Homebrew/Arch's Paru only)."""
     def get_macos_commands() -> Callable[[], None]:
         @task_title('Upgrading with brew')
         def upgrade_macos() -> None:
-            ctx.obj('brew', 'update')
-            ctx.obj('brew', 'upgrade')
+            ctx.obj.run('brew', 'update')
+            ctx.obj.run('brew', 'upgrade')
 
         return upgrade_macos
 
     def get_arch_linux_commands() -> Callable[[], None]:
         @task_title('Upgrading with paru')
         def upgrade_arch() -> None:
-            ctx.obj('paru')
+            ctx.obj.run('paru')
 
         return upgrade_arch
 
@@ -72,21 +82,22 @@ def upgrade_os(ctx: Context) -> None:
 
 
 @app.command()
-def upgrade_python_tools(ctx: Context) -> None:
+def upgrade_python_tools(ctx: RunnerContext) -> None:
     """Upgrade Pipx tool and packages."""
     title('Upgrading pipx and packages')
-    ctx.obj('pipx', 'upgrade-all')
+    ctx.obj.run('pipx', 'upgrade-all')
 
 
 @app.command()
-def upgrade_doom(ctx: Context) -> None:
+def upgrade_doom(ctx: RunnerContext) -> None:
     """Upgrade Doom Emacs distribution."""
     title('Upgrading doom')
-    ctx.obj('doom', 'upgrade')
+    ctx.obj.run('doom', 'upgrade')
 
 
 @app.command()
-def check_repos_clean(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
+def check_repos_clean(ctx: RunnerContext, gitdir: Path = Path(GIT_DIR)) \
+        -> None:
     """Check if repos in gitdir have unpublished work."""
     def is_tree_dirty(dir_: Path) -> bool:
         try:
@@ -100,14 +111,14 @@ def check_repos_clean(ctx: Context, gitdir: Path = Path(GIT_DIR)) -> None:
         return is_dirty
 
     def _has_unsaved_changes(dir_: Path) -> bool:
-        unsaved_changes = ctx.obj(
+        unsaved_changes = ctx.obj.run(
             'git', '-C', dir_, 'status', '--ignore-submodules', '--porcelain',
             capture_output=True,
         )
         return bool(_decode(unsaved_changes))
 
     def _has_unpushed_commits(dir_: Path) -> bool:
-        unpushed_commits = ctx.obj(
+        unpushed_commits = ctx.obj.run(
             'git', '-C', dir_, 'log', '--branches', '--not', '--remotes',
             '--oneline', capture_output=True,
         )

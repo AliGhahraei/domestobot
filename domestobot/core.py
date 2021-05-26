@@ -36,5 +36,6 @@ def _colorize(message: str, foreground: str, **kwargs: Any) -> str:
     return style(message, foreground, **kwargs)
 
 
-def run_command(*args: str, **kwargs: Any) -> CompletedProcess[bytes]:
-    return run(args, check=True, **kwargs)
+class AppObject:
+    def run(self, *args: str, **kwargs: Any) -> CompletedProcess[bytes]:
+        return run(args, check=True, **kwargs)

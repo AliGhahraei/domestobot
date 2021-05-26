@@ -8,7 +8,7 @@ from click.testing import Result
 from pytest import FixtureRequest, fixture
 from typer.testing import CliRunner
 
-from domestobot.commands import app
+from domestobot.commands import CommandRunner, app
 
 LINUX = 'Linux'
 DARWIN = 'Darwin'
@@ -27,7 +27,7 @@ def cli_runner() -> CliRunner:
 
 @fixture
 def command_runner() -> Mock:
-    return Mock()
+    return Mock(spec_set=CommandRunner)
 
 
 @fixture
@@ -88,7 +88,8 @@ def get_unpushed_commits_args(repo: Path) -> Tuple[Union[str, Path], ...]:
 @patch('domestobot.commands.system', return_value=LINUX)
 def test_main(system_mock: Mock, invoke: Invoker, command_runner: Mock,
               repo1: Path, tmp_path: Path) -> None:
-    runner = Mock(return_value=CompletedProcess([], 0, b''))
+    runner = Mock(spec_set=CommandRunner)
+    runner.run = Mock(return_value=CompletedProcess([], 0, b''))
     result = invoke('--gitdir', str(tmp_path), runner=runner)
     assert_upgrading_fisher_message_shown(result.stdout)
     assert_upgrading_paru_message_shown(result.stdout)
@@ -105,7 +106,8 @@ class TestUpgradeFisher:
                                    command_runner: Mock) -> None:
         result = invoke('upgrade-fisher')
         assert_upgrading_fisher_message_shown(result.stdout)
-        command_runner.assert_called_once_with('fish', '-c', 'fisher update')
+        command_runner.run.assert_called_once_with('fish', '-c',
+                                                   'fisher update')
         assert result.exit_code == 0
 
     @staticmethod
@@ -114,7 +116,7 @@ class TestUpgradeFisher:
                                             command_runner: Mock) -> None:
         result = invoke('upgrade-fisher')
         assert not result.stdout
-        command_runner.assert_not_called()
+        command_runner.run.assert_not_called()
         assert result.exit_code == 0
 
 
@@ -125,7 +127,7 @@ class TestUpgradeOs:
                                         command_runner: Mock) -> None:
         result = invoke('upgrade-os')
         assert_upgrading_paru_message_shown(result.stdout)
-        command_runner.assert_called_once_with('paru')
+        command_runner.run.assert_called_once_with('paru')
         assert result.exit_code == 0
 
     @staticmethod
@@ -134,8 +136,8 @@ class TestUpgradeOs:
                                          command_runner: Mock) -> None:
         result = invoke('upgrade-os')
         assert 'Upgrading with brew' in result.stdout
-        command_runner.assert_has_calls([call('brew', 'update'),
-                                         call('brew', 'upgrade')])
+        command_runner.run.assert_has_calls([call('brew', 'update'),
+                                             call('brew', 'upgrade')])
         assert result.exit_code == 0
 
     @staticmethod
@@ -146,21 +148,21 @@ class TestUpgradeOs:
         result = invoke('upgrade-os')
         warning = f"Package managers for {UNKNOWN_OS} aren't supported"
         assert warning in result.stdout
-        command_runner.assert_not_called()
+        command_runner.run.assert_not_called()
         assert result.exit_code == 0
 
 
 def test_upgrade_python_tools(invoke: Invoker, command_runner: Mock) -> None:
     result = invoke('upgrade-python-tools')
     assert_upgrading_python_tools_message_shown(result.stdout)
-    command_runner.assert_called_once_with('pipx', 'upgrade-all')
+    command_runner.run.assert_called_once_with('pipx', 'upgrade-all')
     assert result.exit_code == 0
 
 
 def test_upgrade_doom(invoke: Invoker, command_runner: Mock) -> None:
     result = invoke('upgrade-doom')
     assert_upgrading_doom_message_shown(result.stdout)
-    command_runner.assert_called_once_with('doom', 'upgrade')
+    command_runner.run.assert_called_once_with('doom', 'upgrade')
     assert result.exit_code == 0
 
 
@@ -178,19 +180,20 @@ class TestCheckReposClean:
     ) -> None:
         result = invoke('check-repos-clean', '--gitdir', str(tmp_path))
         assert_clean_message_shown(result.stdout)
-        command_runner.assert_not_called()
+        command_runner.run.assert_not_called()
         assert result.exit_code == 0
 
     @staticmethod
     def test_check_says_clean_on_clean_repos(
         invoke: Invoker, tmp_path: Path, repos: List[Path]
     ) -> None:
-        runner = Mock(side_effect=[CompletedProcess([], 0, b'')
-                                   for _ in range(len(repos) * 2)])
+        runner = Mock(spec_set=CommandRunner)
+        runner.run = Mock(side_effect=[CompletedProcess([], 0, b'')
+                                       for _ in range(len(repos) * 2)])
         result = invoke('check-repos-clean', '--gitdir', str(tmp_path),
                         runner=runner)
         for repo in repos:
-            runner.assert_has_calls([
+            runner.run.assert_has_calls([
                 call(*get_unsaved_changes_args(repo), capture_output=True),
                 call(*get_unpushed_commits_args(repo), capture_output=True),
             ])
@@ -201,11 +204,13 @@ class TestCheckReposClean:
     def test_check_says_not_clean_on_repos_with_unsaved_changes(
             invoke: Invoker, tmp_path: Path, repo1: Path,
     ) -> None:
-        runner = Mock(side_effect=[CompletedProcess([], 0, b'M  fake_file')])
+        runner = Mock(spec_set=CommandRunner)
+        runner.run = Mock(side_effect=[CompletedProcess([], 0,
+                                                        b'M  fake_file')])
         result = invoke('check-repos-clean', '--gitdir', str(tmp_path),
                         runner=runner)
-        runner.assert_called_once_with(*get_unsaved_changes_args(repo1),
-                                       capture_output=True)
+        runner.run.assert_called_once_with(*get_unsaved_changes_args(repo1),
+                                           capture_output=True)
         assert_repo_not_clean(repo1, result.stdout)
         assert result.exit_code == 0
 
@@ -213,14 +218,15 @@ class TestCheckReposClean:
     def test_check_says_not_clean_on_repos_with_unpushed_commits(
             invoke: Invoker, tmp_path: Path, repo1: Path,
     ) -> None:
-        runner = Mock(side_effect=[
+        runner = Mock(spec_set=CommandRunner)
+        runner.run = Mock(side_effect=[
             CompletedProcess([], 0, b''),
             CompletedProcess([], 0,
                              b'a9a152e (HEAD -> main) Create fake commit'),
         ])
         result = invoke('check-repos-clean', '--gitdir', str(tmp_path),
                         runner=runner)
-        runner.assert_has_calls([
+        runner.run.assert_has_calls([
             call(*get_unsaved_changes_args(repo1), capture_output=True),
             call(*get_unpushed_commits_args(repo1), capture_output=True),
         ])
@@ -231,11 +237,12 @@ class TestCheckReposClean:
     def test_check_exits_with_not_a_repo_error_on_invalid_repo(
             invoke: Invoker, tmp_path: Path, repo1: Path,
     ) -> None:
-        runner = Mock(side_effect=CalledProcessError(128, 'command'))
+        runner = Mock(spec_set=CommandRunner)
+        runner.run = Mock(side_effect=CalledProcessError(128, 'command'))
         result = invoke('check-repos-clean', '--gitdir', str(tmp_path),
                         runner=runner)
-        runner.assert_called_once_with(*get_unsaved_changes_args(repo1),
-                                       capture_output=True)
+        runner.run.assert_called_once_with(*get_unsaved_changes_args(repo1),
+                                           capture_output=True)
         assert result.exit_code == 1
         assert f'Not a git repository: {repo1}' in result.stdout
 
@@ -244,9 +251,10 @@ class TestCheckReposClean:
             invoke: Invoker, tmp_path: Path, repo1: Path,
     ) -> None:
         exception = CalledProcessError(1, 'command')
-        runner = Mock(side_effect=exception)
+        runner = Mock(spec_set=CommandRunner)
+        runner.run = Mock(side_effect=exception)
         result = invoke('check-repos-clean', '--gitdir', str(tmp_path),
                         runner=runner)
-        runner.assert_called_once_with(*get_unsaved_changes_args(repo1),
-                                       capture_output=True)
+        runner.run.assert_called_once_with(*get_unsaved_changes_args(repo1),
+                                           capture_output=True)
         assert result.exception == exception
