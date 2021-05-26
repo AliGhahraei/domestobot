@@ -18,5 +18,6 @@ def test_run_command_executes_command(app_object: AppObject) -> None:
 
 def test_run_command_raises_exception_after_error(app_object: AppObject) \
         -> None:
-    with raises(CalledProcessError):
+    with raises(CalledProcessError, match='Command .* returned non-zero exit '
+                                          'status 1.'):
         app_object.run('pwd', '--unknown-option')
