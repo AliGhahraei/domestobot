@@ -40,28 +40,31 @@ def invoke(cli_runner: CliRunner) -> Invoker:
 
 
 def assert_upgrade_fisher_called(context_object: Mock) -> None:
-    assert_routine_called('upgrade_fisher', context_object)
+    assert_routine_called_with(context_object, 'upgrade_fisher',
+                               context_object)
 
 
 def assert_upgrade_os_called(context_object: Mock) -> None:
-    assert_routine_called('upgrade_os', context_object)
+    assert_routine_called_with(context_object, 'upgrade_os', context_object)
 
 
 def assert_upgrade_python_tools_called(context_object: Mock) -> None:
-    assert_routine_called('upgrade_python_tools', context_object)
+    assert_routine_called_with(context_object, 'upgrade_python_tools',
+                               context_object)
 
 
 def assert_upgrade_doom_called(context_object: Mock) -> None:
-    assert_routine_called('upgrade_doom', context_object)
+    assert_routine_called_with(context_object, 'upgrade_doom', context_object)
 
 
 def assert_check_repos_clean_called(context_object: Mock,
                                     gitdir: Path) -> None:
-    assert_routine_called('check_repos_clean', context_object, gitdir)
+    assert_routine_called_with(context_object, 'check_repos_clean',
+                               context_object, gitdir)
 
 
-def assert_routine_called(routine: str, context_object: Mock, *args: Any,
-                          **kwargs: Any) -> None:
+def assert_routine_called_with(context_object: Mock, routine: str, *args: Any,
+                               **kwargs: Any) -> None:
     getattr(context_object, routine).assert_called_once_with(*args, **kwargs)
 
 

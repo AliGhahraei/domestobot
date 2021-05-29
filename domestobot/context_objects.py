@@ -1,7 +1,6 @@
-from functools import partial
 from pathlib import Path
 from subprocess import CompletedProcess, run
-from typing import Any, Callable, Protocol, Union, cast
+from typing import Any, Protocol, Union, cast
 
 from domestobot import routines
 from domestobot.routines import CommandRunner
@@ -19,9 +18,7 @@ class AppObject(ContextObject):
         return run(args, check=True, capture_output=capture_output)
 
     def __getattr__(self, item: str) -> 'Routine':
-        routine = cast(Callable[[ContextObject], None],
-                       getattr(routines, item))
-        return partial(routine, self)
+        return cast(Routine, getattr(routines, item))
 
 
 class Routine(Protocol):

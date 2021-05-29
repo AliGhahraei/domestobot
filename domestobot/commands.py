@@ -32,29 +32,29 @@ def main(ctx: TypedContext, gitdir: Path = Path(GIT_DIR)) -> None:
 @app.command()
 def upgrade_fisher(ctx: TypedContext) -> None:
     """Upgrade Fish package manager (Linux only)."""
-    ctx.obj.upgrade_fisher()
+    ctx.obj.upgrade_fisher(ctx.obj)
 
 
 @app.command()
 def upgrade_os(ctx: TypedContext) -> None:
     """Upgrade using native package manager (Homebrew/Arch's Paru only)."""
-    ctx.obj.upgrade_os()
+    ctx.obj.upgrade_os(ctx.obj)
 
 
 @app.command()
 def upgrade_python_tools(ctx: TypedContext) -> None:
     """Upgrade Pipx tool and packages."""
-    ctx.obj.upgrade_python_tools()
+    ctx.obj.upgrade_python_tools(ctx.obj)
 
 
 @app.command()
 def upgrade_doom(ctx: TypedContext) -> None:
     """Upgrade Doom Emacs distribution."""
-    ctx.obj.upgrade_doom()
+    ctx.obj.upgrade_doom(ctx.obj)
 
 
 @app.command()
 def check_repos_clean(ctx: TypedContext, gitdir: Path = Path(GIT_DIR)) \
         -> None:
     """Check if repos in gitdir have unpublished work."""
-    ctx.obj.check_repos_clean(gitdir)
+    ctx.obj.check_repos_clean(ctx.obj, gitdir)
