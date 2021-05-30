@@ -1,6 +1,8 @@
 * domestobot
 Your own trusty housekeeper
 
+[[https://github.com/AliGhahraei/domestobot/actions/workflows/python-tests.yml][https://github.com/AliGhahraei/domestobot/actions/workflows/python-tests.yml/badge.svg]]
+
 [[https://static.wikia.nocookie.net/gtawiki/images/2/20/Domestobot-GTAVCS-Front.png]]
 
 ** Description
