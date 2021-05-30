@@ -62,7 +62,9 @@ def assert_upgrade_doom_called(context_object: Mock) -> None:
     assert_routine_called_with(context_object, 'upgrade_doom', context_object)
 
 
-def assert_check_repos_clean_called(context_object: Mock) -> None:
+def assert_maintain_repos_subroutines_called(context_object: Mock) -> None:
+    assert_routine_called_with(context_object, 'fetch_repos',
+                               context_object, context_object.config.repos)
     assert_routine_called_with(context_object, 'check_repos_clean',
                                context_object, context_object.config.repos)
 
@@ -78,7 +80,7 @@ def assert_main_subroutines_called(context_object: Mock) \
     assert_upgrade_os_called(context_object)
     assert_upgrade_python_tools_called(context_object)
     assert_upgrade_doom_called(context_object)
-    assert_check_repos_clean_called(context_object)
+    assert_maintain_repos_subroutines_called(context_object)
 
 
 def assert_command_succeeded(result: Result) -> None:
@@ -119,9 +121,9 @@ def test_upgrade_doom_runs_subroutine(invoke: Invoker, context_object: Mock) \
     assert_command_succeeded(result)
 
 
-def test_check_repos_clean_runs_subroutine(
+def test_maintain_repos_runs_subroutines(
         invoke: Invoker, context_object: Mock,
 ) -> None:
-    result = invoke('check-repos-clean', context_object=context_object)
-    assert_check_repos_clean_called(context_object)
+    result = invoke('maintain-repos', context_object=context_object)
+    assert_maintain_repos_subroutines_called(context_object)
     assert_command_succeeded(result)

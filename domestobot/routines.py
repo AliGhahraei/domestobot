@@ -64,6 +64,12 @@ def upgrade_doom(runner: CommandRunner) -> None:
     runner.run('doom', 'upgrade')
 
 
+def fetch_repos(runner: CommandRunner, repos: Iterable[Path]) -> None:
+    title('Fetching repos')
+    for repo in repos:
+        runner.run('git', '-C', repo, 'fetch')
+
+
 def check_repos_clean(runner: CommandRunner, repos: Iterable[Path]) -> None:
 
     def is_tree_dirty(dir_: Path) -> bool:

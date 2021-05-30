@@ -7,7 +7,7 @@ from unittest.mock import Mock, call, patch
 from asserts import assert_no_stdout, assert_stdout
 from pytest import CaptureFixture, fixture, raises
 
-from domestobot.routines import (CommandRunner, check_repos_clean,
+from domestobot.routines import (CommandRunner, check_repos_clean, fetch_repos,
                                  upgrade_doom, upgrade_fisher, upgrade_os,
                                  upgrade_python_tools)
 
@@ -112,6 +112,23 @@ def test_upgrade_doom(runner: Mock, capsys: CaptureFixture[str]) -> None:
     upgrade_doom(runner)
     assert_stdout('Upgrading doom', capsys)
     runner.run.assert_called_once_with('doom', 'upgrade')
+
+
+class TestFetchRepos:
+    @staticmethod
+    def test_fetch_shows_fetching_repos_message(
+            runner: Mock, repos: List[Path], capsys: CaptureFixture[str],
+    ) -> None:
+        fetch_repos(runner, repos)
+        assert_stdout('Fetching repos', capsys)
+
+    @staticmethod
+    def test_fetch_is_run_for_every_repo(runner: Mock, repos: List[Path]) \
+            -> None:
+        fetch_repos(runner, repos)
+        runner.run.assert_has_calls([
+            call('git', '-C', repo, 'fetch') for repo in repos
+        ])
 
 
 class TestCheckReposClean:

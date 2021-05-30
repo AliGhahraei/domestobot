@@ -14,7 +14,7 @@ class TypedContext(Context):
 def main(ctx: TypedContext) -> None:
     """Your own trusty housekeeper.
 
-    Run without specifying a command to perform all upgrades and check repos.
+    Run without specifying a command to run all subroutines.
     Run --help and the name of a command to get more information about it
     (e.g. `domestobot upgrade-doom --help`).
     """
@@ -23,7 +23,7 @@ def main(ctx: TypedContext) -> None:
         upgrade_os(ctx)
         upgrade_python_tools(ctx)
         upgrade_doom(ctx)
-        check_repos_clean(ctx)
+        maintain_repos(ctx)
 
 
 @app.command()
@@ -51,6 +51,7 @@ def upgrade_doom(ctx: TypedContext) -> None:
 
 
 @app.command()
-def check_repos_clean(ctx: TypedContext) -> None:
-    """Check if repos in config have unpublished work."""
+def maintain_repos(ctx: TypedContext) -> None:
+    """Check if repos in config have unpublished work and fetch them."""
+    ctx.obj.fetch_repos(ctx.obj, ctx.obj.config.repos)
     ctx.obj.check_repos_clean(ctx.obj, ctx.obj.config.repos)
