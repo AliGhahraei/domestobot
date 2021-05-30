@@ -19,6 +19,9 @@ CONFIG_PATH = xdg_config_home() / 'domestobot' / 'config.toml'
 class Config:
     repos: List[Path] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        self.repos = [repo.expanduser() for repo in self.repos]
+
 
 class ConfigReader(Protocol):
     @property

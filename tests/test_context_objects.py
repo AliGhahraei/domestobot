@@ -71,10 +71,11 @@ class TestAppObject:
             test_path: Path, test_path_object: AppObject,
         ) -> None:
             doc = document()
-            doc['repos'] = ['repo1']
+            doc['repos'] = ['~/repo1']
             with open(test_path, 'w') as f:
                 f.write(dumps(doc))
-            assert test_path_object.config == Config(repos=[Path('repo1')])
+            assert (test_path_object.config
+                    == Config(repos=[Path.home() / 'repo1']))
 
         @staticmethod
         def test_config_access_shows_message_for_invalid_config_file_format(
