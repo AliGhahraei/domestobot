@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from pathlib import Path
-from typing import Any, Protocol
+from inspect import getmembers
+from itertools import chain
+from types import SimpleNamespace
+from typing import Any, Protocol, cast
 from unittest.mock import Mock, create_autospec
 
 from click.testing import Result
@@ -27,9 +29,12 @@ def cli_runner() -> CliRunner:
 
 @fixture
 def context_object() -> Mock:
-    mock: Mock = create_autospec(ContextObject)
-    mock.mock_add_spec(routines, spec_set=True)
-    return mock
+    all_members = chain(getmembers(ContextObject), getmembers(routines))
+    namespace = SimpleNamespace()
+    for name, attr in ((name, attr) for name, attr in all_members
+                       if not name.startswith('_')):
+        setattr(namespace, name, attr)
+    return cast(Mock, create_autospec(namespace, spec_set=True))
 
 
 @fixture
@@ -57,10 +62,9 @@ def assert_upgrade_doom_called(context_object: Mock) -> None:
     assert_routine_called_with(context_object, 'upgrade_doom', context_object)
 
 
-def assert_check_repos_clean_called(context_object: Mock,
-                                    gitdir: Path) -> None:
+def assert_check_repos_clean_called(context_object: Mock) -> None:
     assert_routine_called_with(context_object, 'check_repos_clean',
-                               context_object, gitdir)
+                               context_object, context_object.config.repos)
 
 
 def assert_routine_called_with(context_object: Mock, routine: str, *args: Any,
@@ -68,32 +72,22 @@ def assert_routine_called_with(context_object: Mock, routine: str, *args: Any,
     getattr(context_object, routine).assert_called_once_with(*args, **kwargs)
 
 
-def assert_main_subroutines_called(context_object: Mock, gitdir: Path) \
+def assert_main_subroutines_called(context_object: Mock) \
         -> None:
     assert_upgrade_fisher_called(context_object)
     assert_upgrade_os_called(context_object)
     assert_upgrade_python_tools_called(context_object)
     assert_upgrade_doom_called(context_object)
-    assert_check_repos_clean_called(context_object, gitdir)
+    assert_check_repos_clean_called(context_object)
 
 
 def assert_command_succeeded(result: Result) -> None:
     assert result.exit_code == 0
 
 
-def test_main_runs_subroutines_with_default_gitdir(
-        invoke: Invoker, context_object: Mock,
-) -> None:
+def test_main_runs_subroutines(invoke: Invoker, context_object: Mock) -> None:
     result = invoke(context_object=context_object)
-    assert_main_subroutines_called(context_object, Path.home() / 'g')
-    assert_command_succeeded(result)
-
-
-def test_main_runs_subroutines_with_custom_gitdir(
-        invoke: Invoker, context_object: Mock,
-) -> None:
-    result = invoke('--gitdir', 'dir', context_object=context_object)
-    assert_main_subroutines_called(context_object, Path('dir'))
+    assert_main_subroutines_called(context_object)
     assert_command_succeeded(result)
 
 
@@ -125,18 +119,9 @@ def test_upgrade_doom_runs_subroutine(invoke: Invoker, context_object: Mock) \
     assert_command_succeeded(result)
 
 
-def test_check_repos_clean_runs_subroutine_with_default_gitdir(
+def test_check_repos_clean_runs_subroutine(
         invoke: Invoker, context_object: Mock,
 ) -> None:
     result = invoke('check-repos-clean', context_object=context_object)
-    assert_check_repos_clean_called(context_object, Path.home() / 'g')
-    assert_command_succeeded(result)
-
-
-def test_check_repos_clean_runs_subroutine_with_custom_gitdir(
-        invoke: Invoker, context_object: Mock,
-) -> None:
-    result = invoke('check-repos-clean', '--gitdir', 'dir',
-                    context_object=context_object)
-    assert_check_repos_clean_called(context_object, Path('dir'))
+    assert_check_repos_clean_called(context_object)
     assert_command_succeeded(result)

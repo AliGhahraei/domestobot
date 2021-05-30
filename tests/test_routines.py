@@ -4,8 +4,8 @@ from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Tuple, Union
 from unittest.mock import Mock, call, patch
 
-from _pytest.python_api import raises
-from pytest import CaptureFixture, fixture
+from asserts import assert_no_stdout, assert_stdout
+from pytest import CaptureFixture, fixture, raises
 
 from domestobot.routines import (CommandRunner, check_repos_clean,
                                  upgrade_doom, upgrade_fisher, upgrade_os,
@@ -42,18 +42,6 @@ def assert_repo_not_clean(repo: Path, capsys: CaptureFixture[str]) -> None:
 
 def assert_clean_message_shown(capsys: CaptureFixture[str]) -> None:
     assert_stdout("Everything's clean!", capsys)
-
-
-def assert_stdout(message: str, capsys: CaptureFixture[str]) -> None:
-    assert message in readout(capsys)
-
-
-def assert_no_stdout(capsys: CaptureFixture[str]) -> None:
-    assert not readout(capsys)
-
-
-def readout(capsys: CaptureFixture[str]) -> str:
-    return capsys.readouterr().out
 
 
 def get_unpushed_commits_args(repo: Path) -> Tuple[Union[str, Path], ...]:
@@ -128,28 +116,27 @@ def test_upgrade_doom(runner: Mock, capsys: CaptureFixture[str]) -> None:
 
 class TestCheckReposClean:
     @staticmethod
-    def test_check_says_checking_repos_on_empty_gitdir(
-        runner: Mock, tmp_path: Path, capsys: CaptureFixture[str],
+    def test_check_says_checking_repos_with_no_repos(
+        runner: Mock, capsys: CaptureFixture[str],
     ) -> None:
-        check_repos_clean(runner, tmp_path)
+        check_repos_clean(runner, [])
         assert_stdout('Checking git repos', capsys)
 
     @staticmethod
-    def test_check_says_clean_without_running_commands_on_empty_gitdir(
-        runner: Mock, tmp_path: Path, capsys: CaptureFixture[str],
+    def test_check_says_no_repos_without_running_commands_with_no_repos(
+        runner: Mock, capsys: CaptureFixture[str],
     ) -> None:
-        check_repos_clean(runner, tmp_path)
-        assert_clean_message_shown(capsys)
+        check_repos_clean(runner, [])
+        assert_stdout("No repos to check", capsys)
         runner.run.assert_not_called()
 
     @staticmethod
     def test_check_says_clean_on_clean_repos(
-        runner: Mock, tmp_path: Path, repos: List[Path],
-        capsys: CaptureFixture[str],
+        runner: Mock, repos: List[Path], capsys: CaptureFixture[str],
     ) -> None:
         runner.run = Mock(side_effect=[CompletedProcess([], 0, b'')
                                        for _ in range(len(repos) * 2)])
-        check_repos_clean(runner, tmp_path)
+        check_repos_clean(runner, repos)
         for repo in repos:
             runner.run.assert_has_calls([
                 call(*get_unsaved_changes_args(repo), capture_output=True),
@@ -159,12 +146,11 @@ class TestCheckReposClean:
 
     @staticmethod
     def test_check_says_not_clean_on_repos_with_unsaved_changes(
-        runner: Mock, tmp_path: Path, repo1: Path,
-        capsys: CaptureFixture[str],
+        runner: Mock, repo1: Path, capsys: CaptureFixture[str],
     ) -> None:
         completed_process = CompletedProcess([], 0, b'M  fake_file')
         runner.run = Mock(side_effect=[completed_process])
-        check_repos_clean(runner, tmp_path)
+        check_repos_clean(runner, [repo1])
         runner.run.assert_called_once_with(
             *get_unsaved_changes_args(repo1), capture_output=True,
         )
@@ -172,15 +158,14 @@ class TestCheckReposClean:
 
     @staticmethod
     def test_check_says_not_clean_on_repos_with_unpushed_commits(
-        runner: Mock, tmp_path: Path, repo1: Path,
-        capsys: CaptureFixture[str],
+        runner: Mock, repo1: Path, capsys: CaptureFixture[str],
     ) -> None:
         runner.run = Mock(side_effect=[
             CompletedProcess([], 0, b''),
             CompletedProcess([], 0,
                              b'a9a152e (HEAD -> main) Create fake commit'),
         ])
-        check_repos_clean(runner, tmp_path)
+        check_repos_clean(runner, [repo1])
         runner.run.assert_has_calls([
             call(*get_unsaved_changes_args(repo1), capture_output=True),
             call(*get_unpushed_commits_args(repo1), capture_output=True),
@@ -189,24 +174,22 @@ class TestCheckReposClean:
 
     @staticmethod
     def test_check_exits_with_not_a_repo_error_on_invalid_repo(
-        runner: Mock, tmp_path: Path, repo1: Path,
+        runner: Mock, repo1: Path,
     ) -> None:
         runner.run = Mock(side_effect=CalledProcessError(128, 'command'))
         with raises(SystemExit, match=f'Not a git repository: {repo1}'):
-            check_repos_clean(runner, tmp_path)
+            check_repos_clean(runner, [repo1])
         runner.run.assert_called_once_with(
             *get_unsaved_changes_args(repo1), capture_output=True,
         )
 
     @staticmethod
-    def test_check_reraises_unhandled_error(
-        runner: Mock, tmp_path: Path, repo1: Path,
-    ) -> None:
+    def test_check_reraises_unhandled_error(runner: Mock, repo1: Path) -> None:
         exception = CalledProcessError(1, 'command')
         runner.run = Mock(side_effect=exception)
         message = "Command 'command' returned non-zero exit status 1."
         with raises(CalledProcessError, match=message):
-            check_repos_clean(runner, tmp_path)
+            check_repos_clean(runner, [repo1])
         runner.run.assert_called_once_with(
             *get_unsaved_changes_args(repo1), capture_output=True
         )

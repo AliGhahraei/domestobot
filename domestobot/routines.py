@@ -4,12 +4,11 @@ from pathlib import Path
 from platform import system
 from subprocess import CalledProcessError, CompletedProcess
 from sys import exit
-from typing import Callable, Protocol, Union
+from typing import Callable, Iterable, Protocol, Union
 
 from domestobot.core import info, task_title, title, warning
 
 _SUBSTRING_ALWAYS_PRESENT_IN_NON_EMPTY_OUTPUT = '->'
-GIT_DIR = Path.home() / 'g'
 
 
 class CommandRunner(Protocol):
@@ -65,8 +64,7 @@ def upgrade_doom(runner: CommandRunner) -> None:
     runner.run('doom', 'upgrade')
 
 
-def check_repos_clean(runner: CommandRunner, gitdir: Path = Path(GIT_DIR)) \
-        -> None:
+def check_repos_clean(runner: CommandRunner, repos: Iterable[Path]) -> None:
 
     def is_tree_dirty(dir_: Path) -> bool:
         try:
@@ -98,8 +96,9 @@ def check_repos_clean(runner: CommandRunner, gitdir: Path = Path(GIT_DIR)) \
         return command_output.stdout.decode('utf-8')
 
     title('Checking git repos')
-    dirty_repos = [repo for repo in gitdir.iterdir() if is_tree_dirty(repo)]
-    if dirty_repos:
+    if not repos:
+        info('No repos to check')
+    elif dirty_repos := [repo for repo in repos if is_tree_dirty(repo)]:
         for repo in dirty_repos:
             warning(f"Repository in {repo} was not clean")
     else:

@@ -17,6 +17,10 @@ pipx install -e /path/to/domestobot
 
 Then run =domestobot --help= to see what it can do.
 
+You can also create a configuration file in
+$XDG_CONFIG_HOME/domestobot/config.toml and use config_template.toml as a
+starting point.
+
 ** Development
 To get a working environment, you should install [[https://github.com/jazzband/pip-tools][pip-tools]] inside a
 virtualenv and use [[https://pydoit.org/][doit]] to install the necessary requirements:

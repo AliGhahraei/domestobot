@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-from pathlib import Path
-
 from typer import Context, Typer
 
 from domestobot.context_objects import AppObject, ContextObject
-from domestobot.routines import GIT_DIR
 
 app = Typer(context_settings={'obj': AppObject()})
 
@@ -14,7 +11,7 @@ class TypedContext(Context):
 
 
 @app.callback(invoke_without_command=True)
-def main(ctx: TypedContext, gitdir: Path = Path(GIT_DIR)) -> None:
+def main(ctx: TypedContext) -> None:
     """Your own trusty housekeeper.
 
     Run without specifying a command to perform all upgrades and check repos.
@@ -26,7 +23,7 @@ def main(ctx: TypedContext, gitdir: Path = Path(GIT_DIR)) -> None:
         upgrade_os(ctx)
         upgrade_python_tools(ctx)
         upgrade_doom(ctx)
-        check_repos_clean(ctx, gitdir)
+        check_repos_clean(ctx)
 
 
 @app.command()
@@ -54,7 +51,6 @@ def upgrade_doom(ctx: TypedContext) -> None:
 
 
 @app.command()
-def check_repos_clean(ctx: TypedContext, gitdir: Path = Path(GIT_DIR)) \
-        -> None:
-    """Check if repos in gitdir have unpublished work."""
-    ctx.obj.check_repos_clean(ctx.obj, gitdir)
+def check_repos_clean(ctx: TypedContext) -> None:
+    """Check if repos in config have unpublished work."""
+    ctx.obj.check_repos_clean(ctx.obj, ctx.obj.config.repos)

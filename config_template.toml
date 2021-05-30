@@ -1,0 +1,2 @@
+# Used by check-repos-clean
+repos = ['/path/to/repo1', '/path/to/repo2']
