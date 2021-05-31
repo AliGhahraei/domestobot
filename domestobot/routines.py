@@ -54,22 +54,23 @@ def upgrade_os(runner: CommandRunner) -> None:
     upgrade_current_os()
 
 
+@task_title('Upgrading pipx and packages')
 def upgrade_python_tools(runner: CommandRunner) -> None:
-    title('Upgrading pipx and packages')
     runner.run('pipx', 'upgrade-all')
 
 
+@task_title('Upgrading doom')
 def upgrade_doom(runner: CommandRunner) -> None:
-    title('Upgrading doom')
     runner.run('doom', 'upgrade')
 
 
+@task_title('Fetching repos')
 def fetch_repos(runner: CommandRunner, repos: Iterable[Path]) -> None:
-    title('Fetching repos')
     for repo in repos:
         runner.run('git', '-C', repo, 'fetch')
 
 
+@task_title('Checking git repos')
 def check_repos_clean(runner: CommandRunner, repos: Iterable[Path]) -> None:
 
     def is_tree_dirty(dir_: Path) -> bool:
@@ -101,7 +102,6 @@ def check_repos_clean(runner: CommandRunner, repos: Iterable[Path]) -> None:
     def _decode(command_output: CompletedProcess[bytes]) -> str:
         return command_output.stdout.decode('utf-8')
 
-    title('Checking git repos')
     if not repos:
         info('No repos to check')
     elif dirty_repos := [repo for repo in repos if is_tree_dirty(repo)]:
