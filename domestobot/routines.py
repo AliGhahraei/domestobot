@@ -75,7 +75,7 @@ def check_yadm_clean(runner: CommandRunner) -> None:
             or _has_unpushed_commits(runner, 'yadm')):
         warning('Yadm was not clean')
     else:
-        warning('Yadm was clean!')
+        info('Yadm was clean!')
 
 
 @task_title('Fetching repos')
