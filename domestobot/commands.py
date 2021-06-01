@@ -23,6 +23,7 @@ def main(ctx: TypedContext) -> None:
         upgrade_os(ctx)
         upgrade_python_tools(ctx)
         upgrade_doom(ctx)
+        maintain_yadm(ctx)
         maintain_repos(ctx)
 
 
@@ -48,6 +49,13 @@ def upgrade_python_tools(ctx: TypedContext) -> None:
 def upgrade_doom(ctx: TypedContext) -> None:
     """Upgrade Doom Emacs distribution."""
     ctx.obj.upgrade_doom(ctx.obj)
+
+
+@app.command()
+def maintain_yadm(ctx: TypedContext) -> None:
+    """check if yadm has unpublished work"""
+    ctx.obj.fetch_yadm(ctx.obj)
+    ctx.obj.check_yadm_clean(ctx.obj)
 
 
 @app.command()
