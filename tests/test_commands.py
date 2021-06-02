@@ -68,6 +68,10 @@ def assert_maintain_yadm_subroutines_called(context_object: Mock) -> None:
                                context_object)
 
 
+def assert_save_aconfmgr_called(context_object: Mock) -> None:
+    assert_routine_called_with(context_object, 'save_aconfmgr', context_object)
+
+
 def assert_maintain_repos_subroutines_called(context_object: Mock) -> None:
     assert_routine_called_with(context_object, 'fetch_repos',
                                context_object, context_object.config.repos)
@@ -87,6 +91,7 @@ def assert_main_subroutines_called(context_object: Mock) \
     assert_upgrade_python_tools_called(context_object)
     assert_upgrade_doom_called(context_object)
     assert_maintain_yadm_subroutines_called(context_object)
+    assert_save_aconfmgr_called(context_object)
     assert_maintain_repos_subroutines_called(context_object)
 
 
@@ -132,6 +137,14 @@ def test_maintain_yadm_runs_subroutine(invoke: Invoker, context_object: Mock) \
         -> None:
     result = invoke('maintain-yadm', context_object=context_object)
     assert_maintain_yadm_subroutines_called(context_object)
+    assert_command_succeeded(result)
+
+
+def test_save_aconfmgr_runs_subroutine(
+        invoke: Invoker, context_object: Mock,
+) -> None:
+    result = invoke('save-aconfmgr', context_object=context_object)
+    assert_save_aconfmgr_called(context_object)
     assert_command_succeeded(result)
 
 

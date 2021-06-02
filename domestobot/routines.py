@@ -78,6 +78,12 @@ def check_yadm_clean(runner: CommandRunner) -> None:
         info('Yadm was clean!')
 
 
+def save_aconfmgr(runner: CommandRunner) -> None:
+    if system() == 'Linux':
+        title('Saving aconfmgr')
+        runner.run('aconfmgr', 'save')
+
+
 @task_title('Fetching repos')
 def fetch_repos(runner: CommandRunner, repos: Iterable[Path]) -> None:
     for repo in repos:

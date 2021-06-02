@@ -9,8 +9,8 @@ from pytest import CaptureFixture, fixture, raises
 
 from domestobot.routines import (CommandRunner, check_repos_clean,
                                  check_yadm_clean, fetch_repos, fetch_yadm,
-                                 upgrade_doom, upgrade_fisher, upgrade_os,
-                                 upgrade_python_tools)
+                                 save_aconfmgr, upgrade_doom, upgrade_fisher,
+                                 upgrade_os, upgrade_python_tools)
 
 MODULE_UNDER_TEST = 'domestobot.routines'
 DARWIN = 'Darwin'
@@ -205,6 +205,25 @@ class TestCheckYadmClean:
                  capture_output=True),
         ])
         assert_stdout('Yadm was clean!', capsys)
+
+
+class TestSaveAconfmgr:
+    @staticmethod
+    @patch(f'{MODULE_UNDER_TEST}.system', return_value=DARWIN)
+    def test_save_aconfmgr_does_nothing_on_darwin(_: Mock, runner: Mock,
+                                                  capsys: CaptureFixture[str])\
+            -> None:
+        save_aconfmgr(runner)
+        assert_no_stdout(capsys)
+        runner.run.assert_not_called()
+
+    @staticmethod
+    @patch(f'{MODULE_UNDER_TEST}.system', return_value=LINUX)
+    def test_save_aconfmgr_saves_on_linux(_: Mock, runner: Mock,
+                                          capsys: CaptureFixture[str]) -> None:
+        save_aconfmgr(runner)
+        assert_stdout('Saving aconfmgr', capsys)
+        runner.run.assert_called_once_with('aconfmgr', 'save')
 
 
 class TestFetchRepos:

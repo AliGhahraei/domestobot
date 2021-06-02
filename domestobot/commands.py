@@ -24,6 +24,7 @@ def main(ctx: TypedContext) -> None:
         upgrade_python_tools(ctx)
         upgrade_doom(ctx)
         maintain_yadm(ctx)
+        save_aconfmgr(ctx)
         maintain_repos(ctx)
 
 
@@ -56,6 +57,12 @@ def maintain_yadm(ctx: TypedContext) -> None:
     """check if yadm has unpublished work"""
     ctx.obj.fetch_yadm(ctx.obj)
     ctx.obj.check_yadm_clean(ctx.obj)
+
+
+@app.command()
+def save_aconfmgr(ctx: TypedContext) -> None:
+    """Run `aconfmgr save`."""
+    ctx.obj.save_aconfmgr(ctx.obj)
 
 
 @app.command()
