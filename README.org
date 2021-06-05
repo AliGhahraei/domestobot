@@ -6,26 +6,47 @@ Your own trusty housekeeper
 [[https://static.wikia.nocookie.net/gtawiki/images/2/20/Domestobot-GTAVCS-Front.png]]
 
 ** Description
-A python command line app to maintain my *nix systems. It helps me with
-stuff like upgrading OSes, upgrading [[https://github.com/hlissner/doom-emacs][Doom Emacs]] or running my backup tools.
-Domestobot is a robotic servant from the [[https://gta.fandom.com/wiki/Domestobot][GTA series]].
+A python command line app to maintain *nix systems. It helps automating os
+upgrades, running backup tools, etc. It gets the commands to do all this
+from a config file, but it automatically generates shell completions. It can
+also decide whether to run a command or not depending on the platform it's
+running on.
+"Domestobot" is a robotic servant from the [[https://gta.fandom.com/wiki/Domestobot][GTA series]].
 
-** Usage
-Just clone the repo and install it using pip, or preferably [[https://pipxproject.github.io/pipx/][pipx]]:
+** Installation
+Just clone the repo and install it using [[https://pipxproject.github.io/pipx/][pipx]]:
 
 #+begin_src shell
 pipx install -e /path/to/domestobot
 #+end_src
 
-Then run =domestobot --help= to see what it can do.
+alternatively, you can also use plain pip:
 
-You can also create a configuration file in
-$XDG_CONFIG_HOME/domestobot/config.toml and use config_template.toml as a
-starting point.
+#+begin_src shell
+pip install --user -e /path/to/domestobot
+#+end_src
+
+** Usage
+Domestobot uses a configuration file with a series of =steps= defining which
+shell commands or python functions you want to run.
+
+Steps are invoked running =domestobot <step name>= and you can also run
+=domestobot= without a name to run all steps sequentially in the order they
+were defined.
+
+Completions for the current shell only need to be installed once running
+=domestobot --install-completion= and after that they will be dynamically
+generated.
+
+You can use [[file:config_tutorial.toml][config_tutorial.toml]] as a starting point. Copy it to
+=~/.config/domestobot/config.toml= so you can test it while you read.
+
+After you're done, run =domestobot --help= to see your steps and additional
+domestobot commands.
 
 ** Development
-To get a working environment, you should install [[https://github.com/jazzband/pip-tools][pip-tools]] inside a
-virtualenv and use [[https://pydoit.org/][doit]] to install the necessary requirements:
+To get a working environment, it is recommended to install [[https://github.com/jazzband/pip-tools][pip-tools]] inside
+a virtualenv and development requirements using [[https://pydoit.org/][doit]]:
 
 #+begin_src shell
 doit sync

@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
-from domestobot.commands import app
+from domestobot.commands import main
 
-app()
+main()

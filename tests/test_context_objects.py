@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 from contextlib import contextmanager
-from inspect import getmembers, isfunction
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Iterator
+from typing import Any, Callable, Iterator
+from unittest.mock import Mock, patch
 
-from pytest import fixture, raises
-from tomlkit import document, dumps
+from asserts import assert_no_stdout, assert_stdout
+from pytest import CaptureFixture, fixture, raises
 
-from domestobot import routines
-from domestobot.context_objects import AppObject, Config
+from domestobot.context_objects import (AppObject, Config, EnvStep, ShellStep,
+                                        get_steps)
 
-
-@fixture
-def default_config_object(tmp_path: Path) -> AppObject:
-    return AppObject(tmp_path / 'non_existent_file')
+MODULE_UNDER_TEST = 'domestobot.context_objects'
+LINUX = 'Linux'
 
 
 @fixture
@@ -22,9 +20,10 @@ def test_path(tmp_path: Path) -> Path:
     return tmp_path / 'file.toml'
 
 
-@fixture
-def test_path_object(test_path: Path) -> AppObject:
-    return AppObject(test_path)
+def assert_metadata_equal(function: Callable[..., Any], name: str, doc: str) \
+        -> None:
+    assert function.__name__ == name
+    assert function.__doc__ == doc
 
 
 @contextmanager
@@ -35,66 +34,189 @@ def invalid_config(message: str) -> Iterator[None]:
 
 
 class TestAppObject:
+    @staticmethod
+    @fixture
+    def app_object(tmp_path: Path) -> AppObject:
+        return AppObject(tmp_path / 'non_existent_file')
+
     class TestRun:
         @staticmethod
-        def test_run_command_executes_command(
-                default_config_object: AppObject,
+        def test_run_executes_command(
+                app_object: AppObject,
         ) -> None:
-            output = default_config_object.run('echo', 'hello',
-                                               capture_output=True)
+            output = app_object.run('echo', 'hello', capture_output=True)
             assert 'hello' in output.stdout.decode('utf-8')
 
         @staticmethod
-        def test_run_command_raises_exception_after_error(
-                default_config_object: AppObject,
+        def test_run_raises_exception_after_error(
+                app_object: AppObject,
         ) -> None:
             with raises(CalledProcessError,
                         match='Command .* returned non-zero exit status 1.'):
-                default_config_object.run('pwd', '--unknown-option')
+                app_object.run('pwd', '--unknown-option')
 
-    @staticmethod
-    def test_object_has_routines_as_attributes(
-            default_config_object: AppObject,
-    ) -> None:
-        for routine_name, _ in getmembers(routines, isfunction):
-            assert hasattr(default_config_object, routine_name)
+    class TestGetSteps:
+        @staticmethod
+        def test_get_steps_creates_empty_steps_if_file_is_missing(
+                app_object: AppObject,
+        ) -> None:
+            assert app_object.get_steps() == []
 
     class TestConfig:
         @staticmethod
-        def test_config_returns_default_instance_if_file_is_missing(
-                default_config_object: AppObject,
-        ) -> None:
-            assert default_config_object.config == Config()
-
-        @staticmethod
-        def test_config_returns_custom_instance_if_file_is_present(
-            test_path: Path, test_path_object: AppObject,
-        ) -> None:
-            doc = document()
-            doc['repos'] = ['~/repo1']
-            with open(test_path, 'w') as f:
-                f.write(dumps(doc))
-            assert (test_path_object.config
-                    == Config(repos=[Path.home() / 'repo1']))
-
-        @staticmethod
         def test_config_access_shows_message_for_invalid_config_file_format(
-            test_path: Path, test_path_object: AppObject,
+                test_path: Path,
         ) -> None:
+            test_path_object = AppObject(test_path)
             with open(test_path, 'w') as f:
                 f.write('invalid toml')
             with invalid_config('Invalid key "invalid toml" at line 1'
                                 ' col 12'):
                 getattr(test_path_object, 'config')
 
+
+class TestGetSteps:
+    @staticmethod
+    def test_get_steps_creates_empty_steps_from_empty_config(runner: Mock) \
+            -> None:
+        assert get_steps(Config(), runner, Mock()) == []
+
+    class TestShellDefinition:
         @staticmethod
-        def test_config_access_shows_message_for_invalid_config_structure(
-            test_path: Path, test_path_object: AppObject,
+        def test_get_steps_creates_shell_definition_with_correct_metadata(
+                runner: Mock, capsys: CaptureFixture[str],
         ) -> None:
-            doc = document()
-            doc['repos'] = 1
-            with open(test_path, 'w') as f:
-                f.write(dumps(doc))
-            with invalid_config('expected str, bytes or os.PathLike object,'
-                                ' not int'):
-                getattr(test_path_object, 'config')
+            step = ShellStep('name', 'doc', command=['command'])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+
+            assert_metadata_equal(function, 'name', 'doc')
+
+        @staticmethod
+        def test_shell_definition_passes_command_to_runner(
+                runner: Mock, capsys: CaptureFixture[str],
+        ) -> None:
+            step = ShellStep('name', 'doc', command=['command', 'param'])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function()
+
+            runner.run.assert_called_once_with('command', 'param')
+
+        @staticmethod
+        def test_shell_definition_without_title_has_no_output(
+                runner: Mock, capsys: CaptureFixture[str],
+        ) -> None:
+            step = ShellStep('name', 'doc', command=['command'])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function()
+
+            assert_no_stdout(capsys)
+
+        @staticmethod
+        def test_shell_definition_with_title_outputs_title(
+                runner: Mock, capsys: CaptureFixture[str],
+        ) -> None:
+            step = ShellStep('name', 'doc', 'title', ['command', 'param'])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function()
+
+            assert_stdout('title', capsys)
+
+        @staticmethod
+        def test_shell_definition_with_multiple_commands_passes_them_to_runner(
+                runner: Mock, capsys: CaptureFixture[str]
+        ) -> None:
+            step = ShellStep('name', 'doc', 'title',
+                             commands=[['command1'], ['command2']])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function()
+
+            runner.run.assert_any_call('command1')
+            runner.run.assert_any_call('command2')
+
+    class TestEnvDefinition:
+        @staticmethod
+        def test_get_steps_creates_env_definition_with_correct_metadata(
+                runner: Mock, capsys: CaptureFixture[str],
+        ) -> None:
+            step = ShellStep('name', 'doc', env=[
+                EnvStep(LINUX, 'title', ['command']),
+            ])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+
+            assert_metadata_equal(function, 'name', 'doc')
+
+        @staticmethod
+        @patch(f'{MODULE_UNDER_TEST}.system', return_value=LINUX)
+        def test_env_definition_passes_matching_platform_command_to_runner(
+                _: Mock, runner: Mock, capsys: CaptureFixture[str],
+        ) -> None:
+            step = ShellStep('name', 'doc', env=[
+                EnvStep(LINUX, 'title', ['command']),
+                EnvStep('Darwin', 'title', ['ignored_command']),
+            ])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function()
+
+            runner.run.assert_called_once_with('command')
+
+        @staticmethod
+        @patch(f'{MODULE_UNDER_TEST}.system', return_value=LINUX)
+        def test_env_definition_outputs_shell_step_title(
+                _: Mock, runner: Mock, capsys: CaptureFixture[str],
+        ) -> None:
+            step = ShellStep('name', 'doc', 'title', env=[
+                EnvStep(LINUX, 'title', ['command']),
+            ])
+
+            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function()
+
+            assert_stdout('title', capsys)
+
+
+class TestShellStep:
+    @staticmethod
+    def test_step_raises_exception_with_command_and_commands_together(
+            runner: Mock
+    ) -> None:
+        with raises(TypeError):
+            ShellStep('name', 'doc', 'title', ['command1'],
+                      [['command2'], ['command3']])
+
+    @staticmethod
+    def test_step_raises_exception_with_command_and_env_together(
+            runner: Mock
+    ) -> None:
+        with raises(TypeError):
+            ShellStep('name', 'doc', 'title', ['command1'],
+                      env=[EnvStep(LINUX, 'title', ['command2'])])
+
+    @staticmethod
+    def test_step_raises_exception_without_command_or_commands_or_env(
+            runner: Mock
+    ) -> None:
+        with raises(TypeError):
+            ShellStep('name', 'doc', 'title')
+
+
+class TestEnvStep:
+    @staticmethod
+    def test_step_raises_exception_with_command_and_commands_together(
+            runner: Mock
+    ) -> None:
+        with raises(TypeError):
+            EnvStep(LINUX, 'title', ['command1'], [['command2'], ['command3']])
+
+    @staticmethod
+    def test_step_raises_exception_without_command_or_commands(
+            runner: Mock
+    ) -> None:
+        with raises(TypeError):
+            EnvStep(LINUX, 'title')

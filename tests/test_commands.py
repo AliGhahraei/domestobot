@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
-from inspect import getmembers
-from itertools import chain
-from types import SimpleNamespace
-from typing import Any, Protocol, cast
-from unittest.mock import Mock, create_autospec
+from typing import Protocol
+from unittest.mock import Mock
 
 from click.testing import Result
 from pytest import fixture
 from typer.testing import CliRunner
 
-from domestobot import routines
-from domestobot.commands import app
+from domestobot.commands import get_app
 from domestobot.context_objects import ContextObject
 
 DARWIN = 'Darwin'
@@ -18,7 +14,7 @@ UNKNOWN_OS = 'Unknown OS'
 
 
 class Invoker(Protocol):
-    def __call__(*args: str, context_object: Mock) -> Result:
+    def __call__(*args: str, context_object: ContextObject) -> Result:
         pass
 
 
@@ -28,129 +24,49 @@ def cli_runner() -> CliRunner:
 
 
 @fixture
-def context_object() -> Mock:
-    all_members = chain(getmembers(ContextObject), getmembers(routines))
-    namespace = SimpleNamespace()
-    for name, attr in ((name, attr) for name, attr in all_members
-                       if not name.startswith('_')):
-        setattr(namespace, name, attr)
-    return cast(Mock, create_autospec(namespace, spec_set=True))
-
-
-@fixture
 def invoke(cli_runner: CliRunner) -> Invoker:
-    def _run(*args: str, context_object: Mock) -> Result:
-        return cli_runner.invoke(app, args, obj=context_object)
+    def _run(*args: str, context_object: ContextObject) -> Result:
+        return cli_runner.invoke(get_app(context_object), args)
     return _run
 
 
-def assert_upgrade_fisher_called(context_object: Mock) -> None:
-    assert_routine_called_with(context_object, 'upgrade_fisher',
-                               context_object)
+@fixture
+def steps() -> 'Steps':
+    return Steps()
 
 
-def assert_upgrade_os_called(context_object: Mock) -> None:
-    assert_routine_called_with(context_object, 'upgrade_os', context_object)
+class Steps:
+    def __init__(self) -> None:
+        self.step_1_called = False
+        self.step_2_called = False
 
+    def step_1(self) -> None:
+        self.step_1_called = True
 
-def assert_upgrade_python_tools_called(context_object: Mock) -> None:
-    assert_routine_called_with(context_object, 'upgrade_python_tools',
-                               context_object)
-
-
-def assert_upgrade_doom_called(context_object: Mock) -> None:
-    assert_routine_called_with(context_object, 'upgrade_doom', context_object)
-
-
-def assert_maintain_yadm_subroutines_called(context_object: Mock) -> None:
-    assert_routine_called_with(context_object, 'fetch_yadm', context_object)
-    assert_routine_called_with(context_object, 'check_yadm_clean',
-                               context_object)
-
-
-def assert_save_aconfmgr_called(context_object: Mock) -> None:
-    assert_routine_called_with(context_object, 'save_aconfmgr', context_object)
-
-
-def assert_maintain_repos_subroutines_called(context_object: Mock) -> None:
-    assert_routine_called_with(context_object, 'fetch_repos',
-                               context_object, context_object.config.repos)
-    assert_routine_called_with(context_object, 'check_repos_clean',
-                               context_object, context_object.config.repos)
-
-
-def assert_routine_called_with(context_object: Mock, routine: str, *args: Any,
-                               **kwargs: Any) -> None:
-    getattr(context_object, routine).assert_called_once_with(*args, **kwargs)
-
-
-def assert_main_subroutines_called(context_object: Mock) \
-        -> None:
-    assert_upgrade_fisher_called(context_object)
-    assert_upgrade_os_called(context_object)
-    assert_upgrade_python_tools_called(context_object)
-    assert_upgrade_doom_called(context_object)
-    assert_maintain_yadm_subroutines_called(context_object)
-    assert_save_aconfmgr_called(context_object)
-    assert_maintain_repos_subroutines_called(context_object)
+    def step_2(self) -> None:
+        self.step_2_called = True
 
 
 def assert_command_succeeded(result: Result) -> None:
     assert result.exit_code == 0
 
 
-def test_main_runs_subroutines(invoke: Invoker, context_object: Mock) -> None:
+def test_steps_are_runnable(invoke: Invoker, steps: Steps) -> None:
+    context_object = Mock(spec_set=ContextObject)
+    context_object.get_steps.return_value = [steps.step_1]
+
+    result = invoke('step-1', context_object=context_object)
+
+    assert_command_succeeded(result)
+    assert steps.step_1_called
+
+
+def test_main_runs_all_steps(invoke: Invoker, steps: Steps) -> None:
+    context_object = Mock(spec_set=ContextObject)
+    context_object.get_steps.return_value = [steps.step_1, steps.step_2]
+
     result = invoke(context_object=context_object)
-    assert_main_subroutines_called(context_object)
+
     assert_command_succeeded(result)
-
-
-def test_upgrade_fisher_runs_subroutine(invoke: Invoker, context_object: Mock)\
-        -> None:
-    result = invoke('upgrade-fisher', context_object=context_object)
-    assert_upgrade_fisher_called(context_object)
-    assert_command_succeeded(result)
-
-
-def test_upgrade_os_runs_subroutine(invoke: Invoker, context_object: Mock) \
-        -> None:
-    result = invoke('upgrade-os', context_object=context_object)
-    assert_upgrade_os_called(context_object)
-    assert_command_succeeded(result)
-
-
-def test_upgrade_python_tools_runs_subroutine(invoke: Invoker,
-                                              context_object: Mock) -> None:
-    result = invoke('upgrade-python-tools', context_object=context_object)
-    assert_upgrade_python_tools_called(context_object)
-    assert_command_succeeded(result)
-
-
-def test_upgrade_doom_runs_subroutine(invoke: Invoker, context_object: Mock) \
-        -> None:
-    result = invoke('upgrade-doom', context_object=context_object)
-    assert_upgrade_doom_called(context_object)
-    assert_command_succeeded(result)
-
-
-def test_maintain_yadm_runs_subroutine(invoke: Invoker, context_object: Mock) \
-        -> None:
-    result = invoke('maintain-yadm', context_object=context_object)
-    assert_maintain_yadm_subroutines_called(context_object)
-    assert_command_succeeded(result)
-
-
-def test_save_aconfmgr_runs_subroutine(
-        invoke: Invoker, context_object: Mock,
-) -> None:
-    result = invoke('save-aconfmgr', context_object=context_object)
-    assert_save_aconfmgr_called(context_object)
-    assert_command_succeeded(result)
-
-
-def test_maintain_repos_runs_subroutines(
-        invoke: Invoker, context_object: Mock,
-) -> None:
-    result = invoke('maintain-repos', context_object=context_object)
-    assert_maintain_repos_subroutines_called(context_object)
-    assert_command_succeeded(result)
+    assert steps.step_1_called
+    assert steps.step_2_called

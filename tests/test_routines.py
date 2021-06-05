@@ -2,15 +2,13 @@
 from pathlib import Path
 from subprocess import CalledProcessError, CompletedProcess
 from typing import List, Tuple, Union
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, call
 
-from asserts import assert_no_stdout, assert_stdout
+from asserts import assert_stdout
 from pytest import CaptureFixture, fixture, raises
 
-from domestobot.routines import (CommandRunner, check_repos_clean,
-                                 check_yadm_clean, fetch_repos, fetch_yadm,
-                                 save_aconfmgr, upgrade_doom, upgrade_fisher,
-                                 upgrade_os, upgrade_python_tools)
+from domestobot.routines import (check_repos_clean, check_yadm_clean,
+                                 fetch_repos, fetch_yadm)
 
 MODULE_UNDER_TEST = 'domestobot.routines'
 DARWIN = 'Darwin'
@@ -19,22 +17,13 @@ UNKNOWN_OS = 'Unknown OS'
 
 
 @fixture
-def runner() -> Mock:
-    return Mock(spec_set=CommandRunner)
+def repo1() -> Path:
+    return Path('repo1')
 
 
 @fixture
-def repo1(tmp_path: Path) -> Path:
-    repo = tmp_path / 'repo1'
-    repo.mkdir()
-    return repo
-
-
-@fixture
-def repos(repo1: Path, tmp_path: Path) -> List[Path]:
-    repo2 = tmp_path / 'repo2'
-    repo2.mkdir()
-    return [repo1, repo2]
+def repos(repo1: Path) -> List[Path]:
+    return [repo1, Path('repo2')]
 
 
 @fixture
@@ -77,67 +66,6 @@ def get_unsaved_changes_args(repo: Path) -> Tuple[Union[str, Path], ...]:
     return 'git', '-C', repo, *get_command_prefix_for_unsaved_changes()
 
 
-class TestUpgradeFisher:
-    @staticmethod
-    @patch(f'{MODULE_UNDER_TEST}.system', return_value=LINUX)
-    def test_upgrade_runs_on_linux(_: Mock, runner: Mock,
-                                   capsys: CaptureFixture[str]) -> None:
-        upgrade_fisher(runner)
-        assert_stdout('Upgrading fisher', capsys)
-        runner.run.assert_called_once_with('fish', '-c', 'fisher update')
-
-    @staticmethod
-    @patch(f'{MODULE_UNDER_TEST}.system', return_value=DARWIN)
-    def test_upgrade_does_nothing_on_darwin(_: Mock, runner: Mock,
-                                            capsys: CaptureFixture[str]) \
-            -> None:
-        upgrade_fisher(runner)
-        assert_no_stdout(capsys)
-        runner.run.assert_not_called()
-
-
-class TestUpgradeOs:
-    @staticmethod
-    @patch(f'{MODULE_UNDER_TEST}.system', return_value=LINUX)
-    def test_upgrade_uses_paru_on_linux(_: Mock, runner: Mock,
-                                        capsys: CaptureFixture[str]) -> None:
-        upgrade_os(runner)
-        assert_stdout('Upgrading with paru', capsys)
-        runner.run.assert_called_once_with('paru')
-
-    @staticmethod
-    @patch(f'{MODULE_UNDER_TEST}.system', return_value=DARWIN)
-    def test_upgrade_uses_brew_on_darwin(_: Mock, runner: Mock,
-                                         capsys: CaptureFixture[str]) -> None:
-        upgrade_os(runner)
-        assert_stdout('Upgrading with brew', capsys)
-        runner.run.assert_has_calls([call('brew', 'update'),
-                                     call('brew', 'upgrade')])
-
-    @staticmethod
-    @patch(f'{MODULE_UNDER_TEST}.system', return_value=UNKNOWN_OS)
-    def test_upgrade_says_unsupported_without_running_commands_in_unknown_os(
-            _: Mock, runner: Mock, capsys: CaptureFixture[str]
-    ) -> None:
-        upgrade_os(runner)
-        assert_stdout(f"Package managers for {UNKNOWN_OS} aren't supported",
-                      capsys)
-        runner.run.assert_not_called()
-
-
-def test_upgrade_python_tools(runner: Mock,
-                              capsys: CaptureFixture[str]) -> None:
-    upgrade_python_tools(runner)
-    assert_stdout('Upgrading pipx and packages', capsys)
-    runner.run.assert_called_once_with('pipx', 'upgrade-all')
-
-
-def test_upgrade_doom(runner: Mock, capsys: CaptureFixture[str]) -> None:
-    upgrade_doom(runner)
-    assert_stdout('Upgrading doom', capsys)
-    runner.run.assert_called_once_with('doom', 'upgrade')
-
-
 class TestFetchYadm:
     @staticmethod
     def test_fetch_shows_fetching_yadm_message(
@@ -167,7 +95,7 @@ class TestCheckYadmClean:
             runner: Mock, capsys: CaptureFixture[str],
             unsaved_changes_output: CompletedProcess[bytes]
     ) -> None:
-        runner.run = Mock(side_effect=[unsaved_changes_output])
+        runner = Mock(side_effect=[unsaved_changes_output])
         check_yadm_clean(runner)
         runner.run.assert_called_once_with(
             'yadm', *get_command_prefix_for_unsaved_changes(),
@@ -207,25 +135,6 @@ class TestCheckYadmClean:
         assert_stdout('Yadm was clean!', capsys)
 
 
-class TestSaveAconfmgr:
-    @staticmethod
-    @patch(f'{MODULE_UNDER_TEST}.system', return_value=DARWIN)
-    def test_save_aconfmgr_does_nothing_on_darwin(_: Mock, runner: Mock,
-                                                  capsys: CaptureFixture[str])\
-            -> None:
-        save_aconfmgr(runner)
-        assert_no_stdout(capsys)
-        runner.run.assert_not_called()
-
-    @staticmethod
-    @patch(f'{MODULE_UNDER_TEST}.system', return_value=LINUX)
-    def test_save_aconfmgr_saves_on_linux(_: Mock, runner: Mock,
-                                          capsys: CaptureFixture[str]) -> None:
-        save_aconfmgr(runner)
-        assert_stdout('Saving aconfmgr', capsys)
-        runner.run.assert_called_once_with('aconfmgr', 'save')
-
-
 class TestFetchRepos:
     @staticmethod
     def test_fetch_shows_fetching_repos_message(
@@ -257,7 +166,7 @@ class TestCheckReposClean:
     ) -> None:
         check_repos_clean(runner, [])
         assert_stdout("No repos to check", capsys)
-        runner.run.assert_not_called()
+        runner.assert_not_called()
 
     @staticmethod
     def test_check_says_clean_on_clean_repos(
@@ -279,7 +188,7 @@ class TestCheckReposClean:
         runner: Mock, repo1: Path, capsys: CaptureFixture[str],
         unsaved_changes_output: CompletedProcess[bytes]
     ) -> None:
-        runner.run = Mock(side_effect=[unsaved_changes_output])
+        runner = Mock(side_effect=[unsaved_changes_output])
         check_repos_clean(runner, [repo1])
         runner.run.assert_called_once_with(
             *get_unsaved_changes_args(repo1), capture_output=True,

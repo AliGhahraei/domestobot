@@ -11,6 +11,11 @@ build-backend = "setuptools.build_meta"
   omit = ['*/__main__.py']
 
   [tool.coverage.report]
-  exclude_lines = ['pragma: no cover', 'pass']
+  exclude_lines = [
+      'pragma: no cover',
+      'pass',
+      'def main.*',
+      'if TYPE_CHECKING.*',
+  ]
   fail_under = 100
   show_missing = true

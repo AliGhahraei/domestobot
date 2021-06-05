@@ -1,0 +1,48 @@
+# You can copy this tutorial to ~/.config/domestobot/config.toml to play with it
+# while you read it.
+# TOML reference: https://toml.io/en/v1.0.0
+
+
+# `[[steps]]` defines an individual step. The most basic kind is a shell step:
+[[steps]]
+name = 'greet_user'                        # Sub-command name to use when
+                                           # running `domestobot <name>`.
+
+doc = "Demo a simple step using `echo`."   # Shown in `domestobot --help` and
+                                           # in tab completion for some shells.
+
+title = 'Running `echo hello!`'            # Shown before any command is run.
+
+command = ['echo', 'hello!']               # Command segments to be passed to
+                                           # python's `subprocess.run`.
+
+
+# Sometimes you want more than one command in a step, so you can also use
+# `commands` instead of `command`.
+[[steps]]
+name = 'greet_user_multiple_times'
+doc = "Demo multiple commands in a step."
+title = 'Running `echo hello` twice'
+commands = [                               # A step must have one of `command`,
+     ['echo', 'hello'],                    # `commands` or `env`.
+     ['echo', 'hello'],
+]
+
+
+# Steps can have multiple `env`s (just like a config has multiple `steps`), to
+# run commands on specific platforms. You can add as many or as few envs as you
+# want and they will only run if their `os` field matches your platform's name.
+[[steps]]
+name = 'run_platform_specific_echo'
+doc = "Demo platform-specific commands."
+
+[[steps.env]]
+os = 'Linux'                               # `os` should match `uname`:
+                                           # https://linux.die.net/man/1/uname
+title = 'Running echo on Linux'
+command = ['echo', "You're using Linux"]
+
+[[steps.env]]
+os = 'Darwin'
+title = 'Running echo on Darwin'
+command = ['echo', "You're using Darwin"]
