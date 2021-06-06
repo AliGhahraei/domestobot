@@ -138,8 +138,7 @@ class TestReadConfig:
     ) -> None:
         with open(test_path, 'w') as f:
             f.write('invalid toml')
-        with invalid_config('Invalid key "invalid toml" at line 1'
-                            ' col 12'):
+        with invalid_config('Invalid key "invalid toml" at line 1 col 12'):
             read_config(test_path)
 
     @staticmethod
