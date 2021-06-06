@@ -11,7 +11,6 @@ from typer import Context, Option, Typer
 from typic import transmute
 from xdg import xdg_config_home
 
-from domestobot import builtin_steps
 from domestobot.config import Config
 from domestobot.core import CommandRunner
 from domestobot.steps import get_steps
@@ -131,7 +130,7 @@ class DomestobotObject(AppObject, CommandRunner):
         self._mode = value
 
     def get_steps(self) -> List[Callable[..., None]]:
-        return get_steps(self.config, self, builtin_steps)
+        return get_steps(self.config, self, object())
 
     def run(self, *args: Union[str, Path], capture_output: bool = False) \
             -> CompletedProcess[bytes]:
