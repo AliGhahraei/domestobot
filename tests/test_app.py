@@ -3,17 +3,20 @@ from contextlib import contextmanager
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Iterator, Protocol
-from unittest.mock import Mock
+from unittest.mock import Mock, call, patch
 
 from click.testing import Result
 from pytest import fixture, raises
 from typer import Typer
 from typer.testing import CliRunner
 
-from domestobot.app import AppObject, ContextObject, get_app
+from domestobot.app import AppObject, ContextObject, get_app, read_config
+from domestobot.config import Config
+from domestobot.steps import get_steps
 
 DARWIN = 'Darwin'
 UNKNOWN_OS = 'Unknown OS'
+STEPS_MODULE = 'domestobot.steps'
 
 
 class Invoker(Protocol):
@@ -111,24 +114,44 @@ class TestAppObject:
 
     class TestGetSteps:
         @staticmethod
-        def test_get_steps_creates_empty_steps_if_file_is_missing(
+        def test_get_steps_creates_empty_steps_for_default_app(
                 app_object: AppObject,
         ) -> None:
             assert app_object.get_steps() == []
 
     class TestConfig:
         @staticmethod
-        @fixture
-        def test_path(tmp_path: Path) -> Path:
-            return tmp_path / 'file.toml'
+        def test_config_is_empty_for_default_app(app_object: AppObject) \
+                -> None:
+            assert app_object.config == Config()
 
-        @staticmethod
-        def test_config_access_shows_message_for_invalid_config_file_format(
-                test_path: Path,
-        ) -> None:
-            test_path_object = AppObject(test_path)
-            with open(test_path, 'w') as f:
-                f.write('invalid toml')
-            with invalid_config('Invalid key "invalid toml" at line 1'
-                                ' col 12'):
-                getattr(test_path_object, 'config')
+
+class TestReadConfig:
+    @staticmethod
+    @fixture
+    def test_path(tmp_path: Path) -> Path:
+        return tmp_path / 'file.toml'
+
+    @staticmethod
+    def test_config_access_shows_message_for_invalid_config_file_format(
+            test_path: Path,
+    ) -> None:
+        with open(test_path, 'w') as f:
+            f.write('invalid toml')
+        with invalid_config('Invalid key "invalid toml" at line 1'
+                            ' col 12'):
+            read_config(test_path)
+
+    @staticmethod
+    @patch(f'{STEPS_MODULE}.system', return_value='Linux')
+    def test_config_tutorial_matches_expected_commands(runner: Mock) -> None:
+        config = read_config(Path('config_tutorial.toml'))
+        for step in get_steps(config, runner, Mock()):
+            step()
+
+        assert runner.run.mock_calls == [
+            call('echo', 'hello!'),
+            call('echo', 'hello'),
+            call('echo', 'hello'),
+            call('echo', "You're using Linux")
+        ]

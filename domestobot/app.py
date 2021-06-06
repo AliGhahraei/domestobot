@@ -62,6 +62,18 @@ class ContextObject(CommandRunner, ConfigReader, StepsGetter, Protocol):
     pass
 
 
+def read_config(path: Path) -> Config:
+    try:
+        with open(path) as f:
+            contents = f.read()
+    except FileNotFoundError:
+        return Config()
+    try:
+        return transmute(Config, parse(contents))
+    except Exception as e:
+        raise SystemExit(f'Error while parsing config file: {e}')
+
+
 class AppObject(ContextObject):
     def __init__(self, config_path: Path = CONFIG_PATH):
         self._config_path = config_path
@@ -69,16 +81,7 @@ class AppObject(ContextObject):
     # type ignored because of https://github.com/python/mypy/issues/8913
     @cached_property
     def config(self) -> Config:  # type: ignore[override]
-        try:
-            with open(self._config_path) as f:
-                contents = f.read()
-        except FileNotFoundError:
-            return Config()
-
-        try:
-            return transmute(Config, parse(contents))
-        except Exception as e:
-            raise SystemExit(f'Error while parsing config file: {e}')
+        return read_config(self._config_path)
 
     def get_steps(self) -> List[Callable[..., None]]:
         return get_steps(self.config, self, builtin_steps)
