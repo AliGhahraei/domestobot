@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-from contextlib import contextmanager
-from pathlib import Path
-from subprocess import CalledProcessError
-from typing import Any, Callable, Iterator
+from typing import Any, Callable
 from unittest.mock import Mock, patch
 
 from asserts import assert_no_stdout, assert_stdout
-from pytest import CaptureFixture, fixture, raises
+from pytest import CaptureFixture
 
-from domestobot.app import AppObject
 from domestobot.config import Config, EnvStep, ShellStep
 from domestobot.steps import get_steps
 
@@ -16,64 +12,10 @@ MODULE_UNDER_TEST = 'domestobot.steps'
 LINUX = 'Linux'
 
 
-@fixture
-def test_path(tmp_path: Path) -> Path:
-    return tmp_path / 'file.toml'
-
-
 def assert_metadata_equal(function: Callable[..., Any], name: str, doc: str) \
         -> None:
     assert function.__name__ == name
     assert function.__doc__ == doc
-
-
-@contextmanager
-def invalid_config(message: str) -> Iterator[None]:
-    with raises(SystemExit,
-                match=f'Error while parsing config file: {message}'):
-        yield
-
-
-class TestAppObject:
-    @staticmethod
-    @fixture
-    def app_object(tmp_path: Path) -> AppObject:
-        return AppObject(tmp_path / 'non_existent_file')
-
-    class TestRun:
-        @staticmethod
-        def test_run_executes_command(
-                app_object: AppObject,
-        ) -> None:
-            output = app_object.run('echo', 'hello', capture_output=True)
-            assert 'hello' in output.stdout.decode('utf-8')
-
-        @staticmethod
-        def test_run_raises_exception_after_error(
-                app_object: AppObject,
-        ) -> None:
-            with raises(CalledProcessError,
-                        match='Command .* returned non-zero exit status 1.'):
-                app_object.run('pwd', '--unknown-option')
-
-    class TestGetSteps:
-        @staticmethod
-        def test_get_steps_creates_empty_steps_if_file_is_missing(
-                app_object: AppObject,
-        ) -> None:
-            assert app_object.get_steps() == []
-
-    class TestConfig:
-        @staticmethod
-        def test_config_access_shows_message_for_invalid_config_file_format(
-                test_path: Path,
-        ) -> None:
-            test_path_object = AppObject(test_path)
-            with open(test_path, 'w') as f:
-                f.write('invalid toml')
-            with invalid_config('Invalid key "invalid toml" at line 1'
-                                ' col 12'):
-                getattr(test_path_object, 'config')
 
 
 class TestGetSteps:
