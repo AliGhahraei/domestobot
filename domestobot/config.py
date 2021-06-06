@@ -28,11 +28,11 @@ class _ShellStepRequired:
 
 @dataclass
 class ShellStep(CommandStep, _ShellStepRequired):
-    env: List['EnvStep'] = field(default_factory=list)
+    envs: List['EnvStep'] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if not(xor(_has_command_or_commands(self), bool(self.env))):
-            raise TypeError('Exactly 1 of `command`, `commands` or `env` must'
+        if not(xor(_has_command_or_commands(self), bool(self.envs))):
+            raise TypeError('Exactly 1 of `command`, `commands` or `envs` must'
                             ' be specified and non-empty')
 
 

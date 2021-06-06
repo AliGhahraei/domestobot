@@ -21,7 +21,7 @@ class TestShellStep:
     ) -> None:
         with raises(TypeError):
             ShellStep('name', 'doc', 'title', ['command1'],
-                      env=[EnvStep('Linux', 'title', ['command2'])])
+                      envs=[EnvStep('Linux', 'title', ['command2'])])
 
     @staticmethod
     def test_step_raises_exception_without_command_or_commands_or_env(

@@ -86,7 +86,7 @@ class TestGetSteps:
         def test_get_steps_creates_env_definition_with_correct_metadata(
                 runner: Mock, capsys: CaptureFixture[str],
         ) -> None:
-            step = ShellStep('name', 'doc', env=[
+            step = ShellStep('name', 'doc', envs=[
                 EnvStep(LINUX, 'title', ['command']),
             ])
 
@@ -99,7 +99,7 @@ class TestGetSteps:
         def test_env_definition_passes_matching_platform_command_to_runner(
                 _: Mock, runner: Mock, capsys: CaptureFixture[str],
         ) -> None:
-            step = ShellStep('name', 'doc', env=[
+            step = ShellStep('name', 'doc', envs=[
                 EnvStep(LINUX, 'title', ['command']),
                 EnvStep('Darwin', 'title', ['ignored_command']),
             ])
@@ -114,7 +114,7 @@ class TestGetSteps:
         def test_env_definition_outputs_shell_step_title(
                 _: Mock, runner: Mock, capsys: CaptureFixture[str],
         ) -> None:
-            step = ShellStep('name', 'doc', 'title', env=[
+            step = ShellStep('name', 'doc', 'title', envs=[
                 EnvStep(LINUX, 'title', ['command']),
             ])
 

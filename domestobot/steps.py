@@ -41,7 +41,7 @@ def _make_command_step_wrapper(step: 'CommandStep', name: str, doc: str,
 
 
 def _get_command_steps(step: 'ShellStep') -> List['CommandStep']:
-    return _get_steps_from_env(step.env) if step.env else [step]
+    return _get_steps_from_env(step.envs) if step.envs else [step]
 
 
 def _get_steps_from_env(steps: Iterable['EnvStep']) -> List['CommandStep']:

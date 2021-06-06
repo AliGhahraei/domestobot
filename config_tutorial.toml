@@ -29,20 +29,20 @@ commands = [                               # A step must have one of `command`,
 ]
 
 
-# Steps can have multiple `env`s (just like a config has multiple `steps`), to
+# Steps can have multiple `envs` (just like a config has multiple `steps`), to
 # run commands on specific platforms. You can add as many or as few envs as you
 # want and they will only run if their `os` field matches your platform's name.
 [[steps]]
 name = 'run_platform_specific_echo'
 doc = "Demo platform-specific commands."
 
-[[steps.env]]
+[[steps.envs]]
 os = 'Linux'                               # `os` should match `uname`:
                                            # https://linux.die.net/man/1/uname
 title = 'Running echo on Linux'
 command = ['echo', "You're using Linux"]
 
-[[steps.env]]
+[[steps.envs]]
 os = 'Darwin'
 title = 'Running echo on Darwin'
 command = ['echo', "You're using Darwin"]
