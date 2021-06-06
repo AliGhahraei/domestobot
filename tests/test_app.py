@@ -7,6 +7,7 @@ from unittest.mock import Mock
 
 from click.testing import Result
 from pytest import fixture, raises
+from typer import Typer
 from typer.testing import CliRunner
 
 from domestobot.app import AppObject, ContextObject, get_app
@@ -16,7 +17,7 @@ UNKNOWN_OS = 'Unknown OS'
 
 
 class Invoker(Protocol):
-    def __call__(*args: str, context_object: ContextObject) -> Result:
+    def __call__(*args: str, app: Typer) -> Result:
         pass
 
 
@@ -27,14 +28,9 @@ def cli_runner() -> CliRunner:
 
 @fixture
 def invoke(cli_runner: CliRunner) -> Invoker:
-    def _run(*args: str, context_object: ContextObject) -> Result:
-        return cli_runner.invoke(get_app(context_object), args)
+    def _run(*args: str, app: Typer) -> Result:
+        return cli_runner.invoke(app, args)
     return _run
-
-
-@fixture
-def test_path(tmp_path: Path) -> Path:
-    return tmp_path / 'file.toml'
 
 
 @contextmanager
@@ -65,26 +61,30 @@ def assert_command_succeeded(result: Result) -> None:
     assert result.exit_code == 0
 
 
-def test_steps_are_runnable(invoke: Invoker, steps_stub: StepsStub) -> None:
-    context_object = Mock(spec_set=ContextObject)
-    context_object.get_steps.return_value = [steps_stub.step_1]
+class TestGetApp:
+    @staticmethod
+    def test_steps_are_runnable(invoke: Invoker, steps_stub: StepsStub) \
+            -> None:
+        context_object = Mock(spec_set=ContextObject)
+        context_object.get_steps.return_value = [steps_stub.step_1]
 
-    result = invoke('step-1', context_object=context_object)
+        result = invoke('step-1', app=get_app(context_object))
 
-    assert_command_succeeded(result)
-    assert steps_stub.step_1_called
+        assert_command_succeeded(result)
+        assert steps_stub.step_1_called
 
+    @staticmethod
+    def test_main_runs_all_steps(invoke: Invoker, steps_stub: StepsStub) \
+            -> None:
+        context_object = Mock(spec_set=ContextObject)
+        context_object.get_steps.return_value = [steps_stub.step_1,
+                                                 steps_stub.step_2]
 
-def test_main_runs_all_steps(invoke: Invoker, steps_stub: StepsStub) -> None:
-    context_object = Mock(spec_set=ContextObject)
-    context_object.get_steps.return_value = [steps_stub.step_1,
-                                             steps_stub.step_2]
+        result = invoke(app=get_app(context_object))
 
-    result = invoke(context_object=context_object)
-
-    assert_command_succeeded(result)
-    assert steps_stub.step_1_called
-    assert steps_stub.step_2_called
+        assert_command_succeeded(result)
+        assert steps_stub.step_1_called
+        assert steps_stub.step_2_called
 
 
 class TestAppObject:
@@ -117,6 +117,11 @@ class TestAppObject:
             assert app_object.get_steps() == []
 
     class TestConfig:
+        @staticmethod
+        @fixture
+        def test_path(tmp_path: Path) -> Path:
+            return tmp_path / 'file.toml'
+
         @staticmethod
         def test_config_access_shows_message_for_invalid_config_file_format(
                 test_path: Path,

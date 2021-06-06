@@ -3,7 +3,7 @@ from abc import abstractmethod
 from functools import cached_property
 from pathlib import Path
 from subprocess import CompletedProcess, run
-from typing import Callable, List, Protocol, Union
+from typing import Callable, List, Optional, Protocol, Union
 
 from tomlkit import parse
 from typer import Context, Typer
@@ -19,10 +19,11 @@ CONFIG_PATH = xdg_config_home() / 'domestobot' / 'config.toml'
 
 
 def main() -> None:
-    get_app(AppObject())()
+    get_app()()
 
 
-def get_app(context_object: 'ContextObject') -> Typer:
+def get_app(context_object: Optional['ContextObject'] = None) -> Typer:
+    context_object = context_object or AppObject()
     app = Typer()
     steps = context_object.get_steps()
 
