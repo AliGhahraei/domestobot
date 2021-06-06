@@ -38,9 +38,9 @@ def get_app(app_object: Optional['AppObject'] = None) -> Typer:
     def main(ctx: Context, dry_run: bool = dry_run_option) -> None:
         """Your own trusty housekeeper.
 
-        Run without specifying a command to run all subroutines.
-        Run --help and the name of a command to get more information about it
-        (e.g. `domestobot upgrade-doom --help`).
+        Run without specifying a step to run all of them.
+        Run `domestobot <step_name> --help` to get more information about that
+        particular one.
         """
         if dry_run:
             app_object_.mode = Mode.DRY_RUN
