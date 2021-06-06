@@ -23,8 +23,8 @@ def main() -> None:
     get_app()()
 
 
-def get_app(context_object: Optional['ContextObject'] = None) -> Typer:
-    context_object = context_object or AppObject()
+def get_app(context_object: Optional['AppObject'] = None) -> Typer:
+    context_object = context_object or DomestobotObject()
     app = Typer()
     steps = context_object.get_steps()
 
@@ -59,7 +59,7 @@ class StepsGetter(Protocol):
         pass
 
 
-class ContextObject(CommandRunner, ConfigReader, StepsGetter, Protocol):
+class AppObject(CommandRunner, ConfigReader, StepsGetter, Protocol):
     pass
 
 
@@ -75,7 +75,7 @@ def read_config(path: Path) -> Config:
         raise SystemExit(f'Error while parsing config file: {e}')
 
 
-class AppObject(ContextObject):
+class DomestobotObject(AppObject):
     def __init__(self, config_path: Optional[Path] = None):
         self.config_path = (config_path
                             or Path(getenv('DOMESTOBOT_CONFIG', CONFIG_PATH)))
