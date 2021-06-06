@@ -8,10 +8,11 @@ from unittest.mock import Mock, patch
 from asserts import assert_no_stdout, assert_stdout
 from pytest import CaptureFixture, fixture, raises
 
-from domestobot.context_objects import (AppObject, Config, EnvStep, ShellStep,
-                                        get_steps)
+from domestobot.app import AppObject
+from domestobot.config import Config, EnvStep, ShellStep
+from domestobot.steps import get_steps
 
-MODULE_UNDER_TEST = 'domestobot.context_objects'
+MODULE_UNDER_TEST = 'domestobot.steps'
 LINUX = 'Linux'
 
 
@@ -179,44 +180,3 @@ class TestGetSteps:
             function()
 
             assert_stdout('title', capsys)
-
-
-class TestShellStep:
-    @staticmethod
-    def test_step_raises_exception_with_command_and_commands_together(
-            runner: Mock
-    ) -> None:
-        with raises(TypeError):
-            ShellStep('name', 'doc', 'title', ['command1'],
-                      [['command2'], ['command3']])
-
-    @staticmethod
-    def test_step_raises_exception_with_command_and_env_together(
-            runner: Mock
-    ) -> None:
-        with raises(TypeError):
-            ShellStep('name', 'doc', 'title', ['command1'],
-                      env=[EnvStep(LINUX, 'title', ['command2'])])
-
-    @staticmethod
-    def test_step_raises_exception_without_command_or_commands_or_env(
-            runner: Mock
-    ) -> None:
-        with raises(TypeError):
-            ShellStep('name', 'doc', 'title')
-
-
-class TestEnvStep:
-    @staticmethod
-    def test_step_raises_exception_with_command_and_commands_together(
-            runner: Mock
-    ) -> None:
-        with raises(TypeError):
-            EnvStep(LINUX, 'title', ['command1'], [['command2'], ['command3']])
-
-    @staticmethod
-    def test_step_raises_exception_without_command_or_commands(
-            runner: Mock
-    ) -> None:
-        with raises(TypeError):
-            EnvStep(LINUX, 'title')

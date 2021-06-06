@@ -7,8 +7,8 @@ from unittest.mock import Mock, call
 from asserts import assert_stdout
 from pytest import CaptureFixture, fixture, raises
 
-from domestobot.routines import (check_repos_clean, check_yadm_clean,
-                                 fetch_repos, fetch_yadm)
+from domestobot.builtin_steps import (check_repos_clean, check_yadm_clean,
+                                      fetch_repos, fetch_yadm)
 
 MODULE_UNDER_TEST = 'domestobot.routines'
 DARWIN = 'Darwin'
