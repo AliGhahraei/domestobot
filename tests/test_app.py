@@ -10,8 +10,9 @@ from pytest import MonkeyPatch, fixture, raises
 from typer import Typer
 from typer.testing import CliRunner
 
-from domestobot.app import AppObject, DomestobotObject, get_app, read_config
-from domestobot.config import Config
+from domestobot.app import (AppObject, ConfigReader, DefaultCommandRunner,
+                            DomestobotObject, get_app)
+from domestobot.config import Config, ShellStep
 from domestobot.steps import get_steps
 
 DARWIN = 'Darwin'
@@ -83,82 +84,87 @@ class TestGetApp:
         app_object.get_steps.return_value = [steps_stub.step_1,
                                              steps_stub.step_2]
 
-        result = invoke(app=get_app(app_object))
+        invoke(app=get_app(app_object))
 
-        assert_command_succeeded(result)
         assert steps_stub.step_1_called
         assert steps_stub.step_2_called
 
+    @staticmethod
+    def test_dry_run_prints_commands(invoke: Invoker) -> None:
+        config = Config(steps=[
+            ShellStep('test_step', 'doc', command=['command', 'param']),
+        ])
+        result = invoke('--dry-run', app=get_app(DomestobotObject(config)))
 
-class TestDomestobotObject:
-    class TestConfigPath:
-        @staticmethod
-        def test_default_path_is_correct() -> None:
-            assert (DomestobotObject().config_path
-                    == Path.home() / '.config/domestobot/config.toml')
+        assert "('command', 'param')" in result.stdout
 
-        @staticmethod
-        def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
-            monkeypatch.setenv('DOMESTOBOT_CONFIG', 'path')
 
-            assert DomestobotObject().config_path == Path('path')
-
+class TestDefaultCommandRunner:
     @staticmethod
     @fixture
-    def domestobot_object(tmp_path: Path) -> DomestobotObject:
-        return DomestobotObject(tmp_path / 'non_existent_file')
+    def command_runner(tmp_path: Path) -> DefaultCommandRunner:
+        return DefaultCommandRunner()
 
-    class TestRun:
-        @staticmethod
-        def test_run_executes_command(
-                domestobot_object: DomestobotObject,
-        ) -> None:
-            output = domestobot_object.run('echo', 'hello',
-                                           capture_output=True)
-            assert 'hello' in output.stdout.decode('utf-8')
+    @staticmethod
+    def test_run_executes_command(
+            command_runner: DefaultCommandRunner,
+    ) -> None:
+        output = command_runner.run('echo', 'hello', capture_output=True)
+        assert 'hello' in output.stdout.decode('utf-8')
 
-        @staticmethod
-        def test_run_raises_exception_after_error(
-                domestobot_object: DomestobotObject,
-        ) -> None:
-            with raises(CalledProcessError,
-                        match='Command .* returned non-zero exit status 1.'):
-                domestobot_object.run('pwd', '--unknown-option')
+    @staticmethod
+    def test_run_raises_exception_after_error(
+            command_runner: DefaultCommandRunner,
+    ) -> None:
+        with raises(CalledProcessError,
+                    match='Command .* returned non-zero exit status 1.'):
+            command_runner.run('pwd', '--unknown-option')
 
+
+class TestDomestobotObject:
     class TestGetSteps:
         @staticmethod
-        def test_get_steps_creates_empty_steps_for_default_app(
-                domestobot_object: DomestobotObject,
-        ) -> None:
-            assert domestobot_object.get_steps() == []
-
-    class TestConfig:
-        @staticmethod
-        def test_config_is_empty_for_default_app(
-                domestobot_object: DomestobotObject,
-        ) -> None:
-            assert domestobot_object.config == Config()
+        def test_get_steps_creates_empty_steps_for_empty_config() -> None:
+            assert DomestobotObject(Config()).get_steps() == []
 
 
-class TestReadConfig:
+class TestConfigReader:
     @staticmethod
     @fixture
     def test_path(tmp_path: Path) -> Path:
         return tmp_path / 'file.toml'
 
     @staticmethod
-    def test_config_access_shows_message_for_invalid_config_file_format(
+    def test_default_path_is_correct() -> None:
+        assert (ConfigReader().path
+                == Path.home() / '.config/domestobot/config.toml')
+
+    @staticmethod
+    def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
+        monkeypatch.setenv('DOMESTOBOT_CONFIG', 'path')
+
+        assert ConfigReader().path == Path('path')
+
+    @staticmethod
+    def test_read_shows_message_for_invalid_config_file_format(
             test_path: Path,
     ) -> None:
         with open(test_path, 'w') as f:
             f.write('invalid toml')
         with invalid_config('Invalid key "invalid toml" at line 1 col 12'):
-            read_config(test_path)
+            ConfigReader(test_path).read()
+
+    @staticmethod
+    def test_read_shows_message_for_missing_config_file(
+            test_path: Path,
+    ) -> None:
+        with raises(SystemExit, match="Config file 'invalid_path' not found"):
+            ConfigReader(Path('invalid_path')).read()
 
     @staticmethod
     @patch(f'{STEPS_MODULE}.system', return_value='Linux')
     def test_config_tutorial_matches_expected_commands(runner: Mock) -> None:
-        config = read_config(Path('config_tutorial.toml'))
+        config = ConfigReader(Path('config_tutorial.toml')).read()
         for step in get_steps(config, runner, Mock()):
             step()
 
