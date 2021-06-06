@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from abc import abstractmethod
 from functools import cached_property
+from os import getenv
 from pathlib import Path
 from subprocess import CompletedProcess, run
 from typing import Callable, List, Optional, Protocol, Union
@@ -75,13 +76,14 @@ def read_config(path: Path) -> Config:
 
 
 class AppObject(ContextObject):
-    def __init__(self, config_path: Path = CONFIG_PATH):
-        self._config_path = config_path
+    def __init__(self, config_path: Optional[Path] = None):
+        self.config_path = (config_path
+                            or Path(getenv('DOMESTOBOT_CONFIG', CONFIG_PATH)))
 
     # type ignored because of https://github.com/python/mypy/issues/8913
     @cached_property
     def config(self) -> Config:  # type: ignore[override]
-        return read_config(self._config_path)
+        return read_config(self.config_path)
 
     def get_steps(self) -> List[Callable[..., None]]:
         return get_steps(self.config, self, builtin_steps)

@@ -6,7 +6,7 @@ from typing import Iterator, Protocol
 from unittest.mock import Mock, call, patch
 
 from click.testing import Result
-from pytest import fixture, raises
+from pytest import MonkeyPatch, fixture, raises
 from typer import Typer
 from typer.testing import CliRunner
 
@@ -91,6 +91,18 @@ class TestGetApp:
 
 
 class TestAppObject:
+    class TestConfigPath:
+        @staticmethod
+        def test_default_path_is_correct() -> None:
+            assert (AppObject().config_path
+                    == Path.home() / '.config/domestobot/config.toml')
+
+        @staticmethod
+        def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
+            monkeypatch.setenv('DOMESTOBOT_CONFIG', 'path')
+
+            assert AppObject().config_path == Path('path')
+
     @staticmethod
     @fixture
     def app_object(tmp_path: Path) -> AppObject:
