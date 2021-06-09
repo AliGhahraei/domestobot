@@ -20,7 +20,7 @@ command = ['echo', 'hello!']               # Command segments to be passed to
 # Sometimes you want more than one command in a step, so you can also use
 # `commands` instead of `command`.
 [[steps]]
-name = 'greet_user_multiple_times'
+name = 'greet_twice'
 doc = "Demo multiple commands in a step."
 title = 'Running `echo hello` twice'
 commands = [                               # A step must have one of `command`,
@@ -33,7 +33,7 @@ commands = [                               # A step must have one of `command`,
 # run commands on specific platforms. You can add as many or as few envs as you
 # want and they will only run if their `os` field matches your platform's name.
 [[steps]]
-name = 'run_platform_specific_echo'
+name = 'echo_platform'
 doc = "Demo platform-specific commands."
 
 [[steps.envs]]
