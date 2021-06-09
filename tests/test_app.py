@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 from contextlib import contextmanager
 from pathlib import Path
-from subprocess import CalledProcessError
-from typing import Iterator, Protocol
+from typing import Iterator, List, Protocol
 from unittest.mock import Mock, call, patch
 
 from click.testing import Result
-from pytest import MonkeyPatch, fixture, raises
+from pytest import CaptureFixture, MonkeyPatch, fixture, raises
 from typer import Typer
 from typer.testing import CliRunner
 
-from domestobot.app import (AppObject, ConfigReader, DefaultCommandRunner,
-                            DomestobotObject, get_app)
+from domestobot.app import ConfigReader, get_app
 from domestobot.config import Config, ShellStep
 from domestobot.steps import get_steps
 
@@ -33,7 +31,7 @@ def cli_runner() -> CliRunner:
 @fixture
 def invoke(cli_runner: CliRunner) -> Invoker:
     def _run(*args: str, app: Typer) -> Result:
-        return cli_runner.invoke(app, args)
+        return cli_runner.invoke(app, args, catch_exceptions=False)
     return _run
 
 
@@ -44,88 +42,128 @@ def invalid_config(message: str) -> Iterator[None]:
         yield
 
 
-@fixture
-def steps_stub() -> 'StepsStub':
-    return StepsStub()
-
-
-class StepsStub:
-    def __init__(self) -> None:
-        self.step_1_called = False
-        self.step_2_called = False
-
-    def step_1(self) -> None:
-        self.step_1_called = True
-
-    def step_2(self) -> None:
-        self.step_2_called = True
-
-
 def assert_command_succeeded(result: Result) -> None:
     assert result.exit_code == 0
 
 
 class TestGetApp:
     @staticmethod
-    def test_steps_are_runnable(invoke: Invoker, steps_stub: StepsStub) \
-            -> None:
-        app_object = Mock(spec_set=AppObject)
-        app_object.get_steps.return_value = [steps_stub.step_1]
-
-        result = invoke('step-1', app=get_app(app_object))
-
-        assert_command_succeeded(result)
-        assert steps_stub.step_1_called
+    @fixture
+    def step_output() -> str:
+        return 'echoed value'
 
     @staticmethod
-    def test_main_runs_all_steps(invoke: Invoker, steps_stub: StepsStub) \
-            -> None:
-        app_object = Mock(spec_set=AppObject)
-        app_object.get_steps.return_value = [steps_stub.step_1,
-                                             steps_stub.step_2]
+    @fixture
+    def step(step_output: str) -> ShellStep:
+        return ShellStep('test_step', 'doc', command=['echo', step_output])
 
-        invoke(app=get_app(app_object))
+    class TestSingleStep:
+        @staticmethod
+        @fixture
+        def config(step: ShellStep) -> Config:
+            return Config(steps=[step])
 
-        assert steps_stub.step_1_called
-        assert steps_stub.step_2_called
+        @staticmethod
+        def test_step_is_runnable(invoke: Invoker, config: Config) -> None:
+            result = invoke('test-step', app=get_app(config))
+
+            assert_command_succeeded(result)
+
+        @staticmethod
+        def test_step_produces_expected_output(
+                invoke: Invoker, config: Config, step_output: str,
+                capfd: CaptureFixture[str],
+        ) -> None:
+            invoke('test-step', app=get_app(config))
+
+            assert step_output in capfd.readouterr().out
+
+        @staticmethod
+        def test_invocation_without_step_is_runnable(invoke: Invoker,
+                                                     config: Config) -> None:
+            result = invoke(app=get_app(config))
+
+            assert_command_succeeded(result)
+
+        @staticmethod
+        def test_invocation_without_steps_calls_step(
+                invoke: Invoker, config: Config, step_output: str,
+                capfd: CaptureFixture[str]
+        ) -> None:
+            invoke(app=get_app(config))
+
+            assert step_output in capfd.readouterr().out
+
+    class TestMultipleSteps:
+        @staticmethod
+        @fixture
+        def second_output() -> str:
+            return 'second value'
+
+        @staticmethod
+        @fixture
+        def outputs(step_output: str, second_output: str) -> List[str]:
+            return [step_output, second_output]
+
+        @staticmethod
+        @fixture
+        def steps(step: ShellStep, second_output: str) -> List[ShellStep]:
+            second = ShellStep('second_step', 'doc',
+                               command=['echo', second_output])
+            return [step, second]
+
+        @staticmethod
+        @fixture
+        def config(steps: List[ShellStep]) -> Config:
+            return Config(steps=steps)
+
+        @staticmethod
+        def test_steps_are_runnable(invoke: Invoker, config: Config) -> None:
+            results = [invoke(step_name, app=get_app(config))
+                       for step_name in ('test-step', 'second-step')]
+
+            for result in results:
+                assert_command_succeeded(result)
+
+        @staticmethod
+        def test_steps_produce_expected_output(
+                invoke: Invoker, config: Config, outputs: str,
+                capfd: CaptureFixture[str],
+        ) -> None:
+            for step_name in ('test-step', 'second-step'):
+                invoke(step_name, app=get_app(config))
+
+            output = capfd.readouterr().out
+            for expected_output in outputs:
+                assert expected_output in output
+
+        @staticmethod
+        def test_invocation_without_step_is_runnable(invoke: Invoker,
+                                                     config: Config) -> None:
+            result = invoke(app=get_app(config))
+
+            assert_command_succeeded(result)
+
+        @staticmethod
+        def test_invocation_without_step_runs_all_steps(
+                invoke: Invoker, config: Config, outputs: str,
+                capfd: CaptureFixture[str],
+        ) -> None:
+            invoke(app=get_app(config))
+
+            output = capfd.readouterr().out
+            for expected_output in outputs:
+                assert expected_output in output
 
     @staticmethod
-    def test_dry_run_prints_commands(invoke: Invoker) -> None:
+    def test_app_prints_commands_with_dry_run(invoke: Invoker) -> None:
         config = Config(steps=[
             ShellStep('test_step', 'doc', command=['command', 'param']),
         ])
-        result = invoke('--dry-run', app=get_app(DomestobotObject(config)))
+
+        result = invoke('--dry-run', app=get_app(config))
 
         assert "('command', 'param')" in result.stdout
-
-
-class TestDefaultCommandRunner:
-    @staticmethod
-    @fixture
-    def command_runner(tmp_path: Path) -> DefaultCommandRunner:
-        return DefaultCommandRunner()
-
-    @staticmethod
-    def test_run_executes_command(
-            command_runner: DefaultCommandRunner,
-    ) -> None:
-        output = command_runner.run('echo', 'hello', capture_output=True)
-        assert 'hello' in output.stdout.decode('utf-8')
-
-    @staticmethod
-    def test_run_raises_exception_after_error(
-            command_runner: DefaultCommandRunner,
-    ) -> None:
-        with raises(CalledProcessError,
-                    match='Command .* returned non-zero exit status 1.'):
-            command_runner.run('pwd', '--unknown-option')
-
-
-class TestDomestobotObject:
-    class TestGetSteps:
-        @staticmethod
-        def test_get_steps_creates_empty_steps_for_empty_config() -> None:
-            assert DomestobotObject(Config()).get_steps() == []
 
 
 class TestConfigReader:

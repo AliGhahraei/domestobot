@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from abc import abstractmethod
+from dataclasses import dataclass
 from enum import Enum, auto
 from os import getenv
 from pathlib import Path
 from subprocess import CompletedProcess, run
-from typing import Callable, Dict, List, Optional, Protocol, Union
+from typing import Any, Callable, List, Optional, Union
 
 from tomlkit import parse
 from typer import Context, Option, Typer
@@ -19,61 +19,21 @@ CONFIG_PATH = xdg_config_home() / 'domestobot' / 'config.toml'
 DRY_RUN_HELP = 'Print commands for every step instead of running them'
 
 
-def main() -> None:
-    get_app()()
-
-
-def get_app(app_object: Optional['AppObject'] = None) -> Typer:
-    app_object_ = app_object or DomestobotObject()
-    app = Typer()
-    steps = app_object_.get_steps()
-
-    for step in steps:
-        app.command()(step)
-
-    dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
-
-    @app.callback(invoke_without_command=True)
-    def main(ctx: Context, dry_run: bool = dry_run_option) -> None:
-        """Your own trusty housekeeper.
-
-        Run without specifying a step to run all of them.
-        Run `domestobot <step_name> --help` to get more information about that
-        particular one.
-        """
-        if dry_run:
-            app_object_.mode = Mode.DRY_RUN
-
-        if ctx.invoked_subcommand is None:
-            for step in steps:
-                step()
-
-    return app
-
-
 class Mode(Enum):
     DEFAULT = auto()
     DRY_RUN = auto()
 
 
-class AppObject(Protocol):
-    @property
-    @abstractmethod
-    def config(self) -> Config:
-        pass
+def main() -> None:
+    get_app()()
 
-    @property
-    @abstractmethod
-    def mode(self) -> Mode:
-        pass
 
-    @mode.setter
-    def mode(self, value: Mode) -> None:
-        pass
-
-    @abstractmethod
-    def get_steps(self) -> List[Callable[..., None]]:
-        pass
+def get_app(config: Optional[Config] = None) -> Typer:
+    config = config or ConfigReader().read()
+    runner_selector = RunnerSelector()
+    commands = get_steps(config, runner_selector.dynamic_mode_runner, object())
+    callback = make_callback(runner_selector.switch_mode, commands)
+    return make_app(AppParams(callback, commands))
 
 
 class ConfigReader:
@@ -84,55 +44,78 @@ class ConfigReader:
         try:
             with open(self.path) as f:
                 contents = f.read()
-        except FileNotFoundError:
-            raise SystemExit(f"Config file '{str(self.path)}' not found")
+        except FileNotFoundError as e:
+            raise SystemExit(f"Config file '{str(self.path)}' "
+                             "not found") from e
         try:
             return transmute(Config, parse(contents))
         except Exception as e:
-            raise SystemExit(f'Error while parsing config file: {e}')
+            raise SystemExit(f'Error while parsing config file: {e}') from e
 
 
-class DefaultCommandRunner(CommandRunner):
-    @staticmethod
-    def run(*args: Union[str, Path], capture_output: bool = False) \
-            -> CompletedProcess[bytes]:
-        return run(args, check=True, capture_output=capture_output)
-
-
-class DryRunner(CommandRunner):
-    @staticmethod
-    def run(*args: Union[str, Path], capture_output: bool = False) \
-            -> CompletedProcess[bytes]:
-        print(args)
-        return CompletedProcess(args, 0)
-
-
-class DomestobotObject(AppObject, CommandRunner):
-    _runners: Dict[Mode, CommandRunner] = {
-        Mode.DEFAULT: DefaultCommandRunner(),
-        Mode.DRY_RUN: DryRunner(),
-    }
-
-    def __init__(self, config: Optional[Config] = None):
-        self._config = config or ConfigReader().read()
+class RunnerSelector:
+    def __init__(self) -> None:
         self._mode = Mode.DEFAULT
+        self._modes = {
+            Mode.DEFAULT: default_run,
+            Mode.DRY_RUN: dry_run,
+        }
 
     @property
-    def config(self) -> Config:
-        return self._config
+    def dynamic_mode_runner(self) -> CommandRunner:
+        class Runner:
+            @staticmethod
+            def run(*args: Union[str, Path], capture_output: bool = False) \
+                    -> CompletedProcess[bytes]:
+                return self._modes[self._mode](*args,
+                                               capture_output=capture_output)
 
-    @property
-    def mode(self) -> Mode:
-        return self._mode
+        return Runner()
 
-    @mode.setter
-    def mode(self, value: Mode) -> None:
-        self._mode = value
+    def switch_mode(self, mode: Mode) -> None:
+        self._mode = mode
 
-    def get_steps(self) -> List[Callable[..., None]]:
-        return get_steps(self.config, self, object())
 
-    def run(self, *args: Union[str, Path], capture_output: bool = False) \
-            -> CompletedProcess[bytes]:
-        return self._runners[self.mode].run(*args,
-                                            capture_output=capture_output)
+def default_run(*args: Union[str, Path], capture_output: bool = False) \
+        -> CompletedProcess[bytes]:
+    return run(args, check=True, capture_output=capture_output)
+
+
+def dry_run(*args: Union[str, Path], capture_output: bool = False) \
+        -> CompletedProcess[bytes]:
+    print(args)
+    return CompletedProcess(args, 0)
+
+
+def make_callback(select_mode: Callable[[Mode], Any],
+                  commands: List[Callable[..., None]]) -> Callable[..., Any]:
+    dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
+
+    def main(ctx: Context, dry_run: bool = dry_run_option) -> None:
+        """Your own trusty housekeeper.
+
+        Run without specifying a step to run all of them.
+        Run `domestobot <step_name> --help` to get more information about that
+        particular one.
+        """
+        if dry_run:
+            select_mode(Mode.DRY_RUN)
+
+        if ctx.invoked_subcommand is None:
+            for step in commands:
+                step()
+    return main
+
+
+def make_app(app_params: 'AppParams') -> Typer:
+    app = Typer()
+    app.callback(invoke_without_command=True)(app_params.callback)
+    for command in app_params.commands:
+        app.command()(command)
+    return app
+
+
+@dataclass
+class AppParams:
+    callback: Callable[..., Any]
+    commands: List[Callable[..., Any]]
