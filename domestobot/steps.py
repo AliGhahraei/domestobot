@@ -2,14 +2,14 @@ from itertools import chain
 from platform import system
 from typing import Callable, Iterable, List
 
-from domestobot.config import CommandStep, Config, EnvStep, ShellStep
+from domestobot.config import CommandStep, EnvStep, ShellStep
 from domestobot.core import CommandRunner, title
 
 
-def get_steps(config: 'Config', runner: CommandRunner) \
+def get_steps(steps: Iterable[ShellStep], runner: CommandRunner) \
         -> List[Callable[..., None]]:
     return list(chain.from_iterable(_get_definitions(step, runner)
-                                    for step in config.steps))
+                                    for step in steps))
 
 
 def _get_definitions(step: 'ShellStep', runner: CommandRunner) \

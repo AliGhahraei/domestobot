@@ -203,7 +203,7 @@ class TestConfigReader:
     @patch(f'{STEPS_MODULE}.system', return_value='Linux')
     def test_config_tutorial_matches_expected_commands(runner: Mock) -> None:
         config = ConfigReader(Path('config_tutorial.toml')).read()
-        for step in get_steps(config, runner):
+        for step in get_steps(config.steps, runner):
             step()
 
         assert runner.run.mock_calls == [
