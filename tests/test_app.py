@@ -2,7 +2,7 @@
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, List, Protocol
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 
 from click.testing import Result
 from pytest import CaptureFixture, MonkeyPatch, fixture, raises
@@ -11,7 +11,6 @@ from typer.testing import CliRunner
 
 from domestobot.app import ConfigReader, get_app
 from domestobot.config import Config, ShellStep
-from domestobot.steps import get_steps
 
 DARWIN = 'Darwin'
 UNKNOWN_OS = 'Unknown OS'
@@ -165,6 +164,21 @@ class TestGetApp:
 
         assert "('command', 'param')" in result.stdout
 
+    @staticmethod
+    @patch(f'{STEPS_MODULE}.system', return_value='Linux')
+    def test_config_tutorial_invocation_matches_expected_commands(
+            _: Mock, invoke: Invoker, capfd: CaptureFixture[str],
+    ) -> None:
+        config = ConfigReader(Path('config_tutorial.toml')).read()
+        invoke(app=get_app(config))
+
+        assert capfd.readouterr().out == '\n'.join([
+            'hello!',
+            'hello',
+            'hello',
+            "You're using Linux",
+        ]) + '\n'
+
 
 class TestConfigReader:
     @staticmethod
@@ -198,17 +212,3 @@ class TestConfigReader:
     ) -> None:
         with raises(SystemExit, match="Config file 'invalid_path' not found"):
             ConfigReader(Path('invalid_path')).read()
-
-    @staticmethod
-    @patch(f'{STEPS_MODULE}.system', return_value='Linux')
-    def test_config_tutorial_matches_expected_commands(runner: Mock) -> None:
-        config = ConfigReader(Path('config_tutorial.toml')).read()
-        for step in get_steps(config.steps, runner):
-            step()
-
-        assert runner.run.mock_calls == [
-            call('echo', 'hello!'),
-            call('echo', 'hello'),
-            call('echo', 'hello'),
-            call('echo', "You're using Linux")
-        ]
