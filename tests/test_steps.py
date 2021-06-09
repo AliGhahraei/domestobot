@@ -22,7 +22,7 @@ class TestGetSteps:
     @staticmethod
     def test_get_steps_creates_empty_steps_from_empty_config(runner: Mock) \
             -> None:
-        assert get_steps(Config(), runner, Mock()) == []
+        assert get_steps(Config(), runner) == []
 
     class TestShellDefinition:
         @staticmethod
@@ -31,7 +31,7 @@ class TestGetSteps:
         ) -> None:
             step = ShellStep('name', 'doc', command=['command'])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
 
             assert_metadata_equal(function, 'name', 'doc')
 
@@ -41,7 +41,7 @@ class TestGetSteps:
         ) -> None:
             step = ShellStep('name', 'doc', command=['command', 'param'])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
             function()
 
             runner.run.assert_called_once_with('command', 'param')
@@ -52,7 +52,7 @@ class TestGetSteps:
         ) -> None:
             step = ShellStep('name', 'doc', command=['command'])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
             function()
 
             assert_no_stdout(capsys)
@@ -63,7 +63,7 @@ class TestGetSteps:
         ) -> None:
             step = ShellStep('name', 'doc', 'title', ['command', 'param'])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
             function()
 
             assert_stdout('title', capsys)
@@ -75,7 +75,7 @@ class TestGetSteps:
             step = ShellStep('name', 'doc', 'title',
                              commands=[['command1'], ['command2']])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
             function()
 
             runner.run.assert_any_call('command1')
@@ -90,7 +90,7 @@ class TestGetSteps:
                 EnvStep(LINUX, 'title', ['command']),
             ])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
 
             assert_metadata_equal(function, 'name', 'doc')
 
@@ -104,7 +104,7 @@ class TestGetSteps:
                 EnvStep('Darwin', 'title', ['ignored_command']),
             ])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
             function()
 
             runner.run.assert_called_once_with('command')
@@ -118,7 +118,7 @@ class TestGetSteps:
                 EnvStep(LINUX, 'title', ['command']),
             ])
 
-            function = get_steps(Config(steps=[step]), runner, Mock())[0]
+            function = get_steps(Config(steps=[step]), runner)[0]
             function()
 
             assert_stdout('title', capsys)

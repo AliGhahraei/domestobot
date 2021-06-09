@@ -31,7 +31,7 @@ def main() -> None:
 def get_app(config: Optional[Config] = None) -> Typer:
     config = config or ConfigReader().read()
     runner_selector = RunnerSelector()
-    commands = get_steps(config, runner_selector.dynamic_mode_runner, object())
+    commands = get_steps(config, runner_selector.dynamic_mode_runner)
     callback = make_callback(runner_selector.switch_mode, commands)
     return make_app(AppParams(callback, commands))
 

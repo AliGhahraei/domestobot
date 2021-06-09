@@ -1,21 +1,19 @@
 from itertools import chain
 from platform import system
-from typing import Any, Callable, Iterable, List
+from typing import Callable, Iterable, List
 
 from domestobot.config import CommandStep, Config, EnvStep, ShellStep
 from domestobot.core import CommandRunner, title
 
 
-def get_steps(config: 'Config', runner: CommandRunner, builtin_registry: Any) \
+def get_steps(config: 'Config', runner: CommandRunner) \
         -> List[Callable[..., None]]:
-    return list(chain.from_iterable(
-        _get_definitions(step, runner, builtin_registry)
-        for step in config.steps
-    ))
+    return list(chain.from_iterable(_get_definitions(step, runner)
+                                    for step in config.steps))
 
 
-def _get_definitions(step: 'ShellStep', runner: CommandRunner,
-                     builtin_registry: Any) -> List[Callable[..., None]]:
+def _get_definitions(step: 'ShellStep', runner: CommandRunner) \
+        -> List[Callable[..., None]]:
     return _build_wrappers_from_shell_step(step, runner)
 
 
