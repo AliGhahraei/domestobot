@@ -16,7 +16,7 @@ from domestobot.config import Config
 from domestobot.core import CommandRunner
 from domestobot.steps import get_steps
 
-CONFIG_PATH = xdg_config_home() / 'domestobot' / 'config.toml'
+CONFIG_PATH = xdg_config_home() / 'domestobot' / 'root.toml'
 DRY_RUN_HELP = 'Print commands for every step instead of running them'
 
 

@@ -217,7 +217,7 @@ class TestGetRootPath:
     @staticmethod
     def test_default_path_is_correct() -> None:
         assert (get_root_path(None)
-                == Path.home() / '.config/domestobot/config.toml')
+                == Path.home() / '.config/domestobot/root.toml')
 
     @staticmethod
     def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
