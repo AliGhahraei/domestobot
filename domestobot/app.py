@@ -28,8 +28,11 @@ def main() -> None:
     get_app()()
 
 
-def get_app(config: Optional[Config] = None) -> Typer:
-    config = config or ConfigReader().read()
+def get_app(config_path: Optional[Path] = None) -> Typer:
+    return get_app_from_config(ConfigReader(config_path).read())
+
+
+def get_app_from_config(config: Config) -> Typer:
     runner_selector = RunnerSelector()
     commands = get_steps(config.steps, runner_selector.dynamic_mode_runner)
     return make_app(AppParams(commands, config.default_subcommands),

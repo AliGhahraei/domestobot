@@ -9,7 +9,7 @@ from pytest import CaptureFixture, MonkeyPatch, fixture, raises
 from typer import Typer
 from typer.testing import CliRunner
 
-from domestobot.app import ConfigReader, get_app
+from domestobot.app import ConfigReader, get_app, get_app_from_config
 from domestobot.config import Config, ShellStep
 
 DARWIN = 'Darwin'
@@ -45,7 +45,7 @@ def assert_command_succeeded(result: Result) -> None:
     assert result.exit_code == 0
 
 
-class TestGetApp:
+class TestGetAppFromConfig:
     @staticmethod
     @fixture
     def step_output() -> str:
@@ -64,7 +64,7 @@ class TestGetApp:
 
         @staticmethod
         def test_step_is_runnable(invoke: Invoker, config: Config) -> None:
-            result = invoke('test-step', app=get_app(config))
+            result = invoke('test-step', app=get_app_from_config(config))
 
             assert_command_succeeded(result)
 
@@ -73,14 +73,14 @@ class TestGetApp:
                 invoke: Invoker, config: Config, step_output: str,
                 capfd: CaptureFixture[str],
         ) -> None:
-            invoke('test-step', app=get_app(config))
+            invoke('test-step', app=get_app_from_config(config))
 
             assert step_output in capfd.readouterr().out
 
         @staticmethod
         def test_invocation_without_step_is_runnable(invoke: Invoker,
                                                      config: Config) -> None:
-            result = invoke(app=get_app(config))
+            result = invoke(app=get_app_from_config(config))
 
             assert_command_succeeded(result)
 
@@ -89,7 +89,7 @@ class TestGetApp:
                 invoke: Invoker, config: Config, step_output: str,
                 capfd: CaptureFixture[str]
         ) -> None:
-            invoke(app=get_app(config))
+            invoke(app=get_app_from_config(config))
 
             assert step_output in capfd.readouterr().out
 
@@ -118,7 +118,7 @@ class TestGetApp:
 
         @staticmethod
         def test_steps_are_runnable(invoke: Invoker, config: Config) -> None:
-            results = [invoke(step_name, app=get_app(config))
+            results = [invoke(step_name, app=get_app_from_config(config))
                        for step_name in ('test-step', 'second-step')]
 
             for result in results:
@@ -130,7 +130,7 @@ class TestGetApp:
                 capfd: CaptureFixture[str],
         ) -> None:
             for step_name in ('test-step', 'second-step'):
-                invoke(step_name, app=get_app(config))
+                invoke(step_name, app=get_app_from_config(config))
 
             output = capfd.readouterr().out
             for expected_output in outputs:
@@ -139,7 +139,7 @@ class TestGetApp:
         @staticmethod
         def test_invocation_without_step_is_runnable(invoke: Invoker,
                                                      config: Config) -> None:
-            result = invoke(app=get_app(config))
+            result = invoke(app=get_app_from_config(config))
 
             assert_command_succeeded(result)
 
@@ -148,7 +148,7 @@ class TestGetApp:
                 invoke: Invoker, config: Config, outputs: str,
                 capfd: CaptureFixture[str],
         ) -> None:
-            invoke(app=get_app(config))
+            invoke(app=get_app_from_config(config))
 
             output = capfd.readouterr().out
             for expected_output in outputs:
@@ -160,7 +160,8 @@ class TestGetApp:
             ShellStep('test_step', 'doc', command=['command', 'param']),
         ])
 
-        result = invoke('--dry-run', 'test-step', app=get_app(config))
+        result = invoke('--dry-run', 'test-step',
+                        app=get_app_from_config(config))
 
         assert "('command', 'param')" in result.stdout
 
@@ -171,7 +172,7 @@ class TestGetApp:
             ShellStep('test_step', 'doc', command=['command', 'param']),
         ])
 
-        result = invoke(app=get_app(config))
+        result = invoke(app=get_app_from_config(config))
 
         assert 'Your own trusty housekeeper.' in result.stdout
 
@@ -184,17 +185,18 @@ class TestGetApp:
             [ShellStep('test_step', 'doc', command=['command', 'param'])]
         )
 
-        result = invoke(app=get_app(config))
+        result = invoke(app=get_app_from_config(config))
         expected_args = ("'invalid_step' is not a valid step",)
         assert result.exception.args == expected_args
 
+
+class TestGetApp:
     @staticmethod
     @patch(f'{STEPS_MODULE}.system', return_value='Linux')
     def test_config_tutorial_invocation_matches_expected_commands(
             _: Mock, invoke: Invoker, capfd: CaptureFixture[str],
     ) -> None:
-        config = ConfigReader(Path('config_tutorial.toml')).read()
-        invoke(app=get_app(config))
+        invoke(app=get_app(Path('config_tutorial.toml')))
 
         assert capfd.readouterr().out == '\n'.join([
             'hello!',
