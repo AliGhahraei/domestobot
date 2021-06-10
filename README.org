@@ -27,12 +27,11 @@ pip install --user -e /path/to/domestobot
 #+end_src
 
 ** Usage
-Domestobot uses a configuration file with a series of =steps= defining which
-shell commands or python functions you want to run for each one.
+Domestobot runs a series of =steps=, which are simple functions that invoke
+shell commands under the hood. Their contents are defined in a config file.
 
 Steps are invoked running =domestobot <step name>= and you can also run
-=domestobot= without a name to run all steps sequentially in the order they
-were defined.
+=domestobot= without a name to run a pre-configured list of steps.
 
 Completions for the current shell only need to be installed once running
 =domestobot --install-completion= and after that they will be dynamically
@@ -40,11 +39,12 @@ generated using your config.
 
 You can use the [[file:tutorial/root.toml][config tutorial]] as a starting point (it's short, I promise).
 Copy it to =~/.config/domestobot/config.toml= so you can test it while you
-read . You can run =domestobot --help= to see what it can do.
+read. Once you copy it, you can run =domestobot --help= to see what
+sub-commands (steps) and options are available.
 
 ** Development
 To get a working environment, it is recommended to install [[https://github.com/jazzband/pip-tools][pip-tools]] inside
-a virtualenv and then development requirements using [[https://pydoit.org/][doit]]:
+a virtualenv and then to install development requirements using [[https://pydoit.org/][doit]]:
 
 #+begin_src shell
 doit sync
