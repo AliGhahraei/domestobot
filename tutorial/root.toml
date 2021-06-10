@@ -3,10 +3,15 @@
 # TOML reference: https://toml.io/en/v1.0.0
 
 
+sub_domestobots = [                        # You can create more configs with
+    'tutorial/sub_config.toml',            # the same syntax and they will be
+]                                          # added as Typer sub-commands.
+
 default_subcommands = [                    # Optional subcommands to run if
     'greet_user',                          # invoked as `domestobot`. Help is
     'greet_twice',                         # shown if this field is not set.
-    'echo_platform'
+    'echo_platform',
+    'sub_config'
 ]
 
 

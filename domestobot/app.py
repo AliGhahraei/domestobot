@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import partial
 from os import getenv
 from pathlib import Path
 from subprocess import CompletedProcess, run
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Mapping, Optional, Union
 
 from tomlkit import parse
 from typer import Context, Option, Typer
@@ -29,33 +30,39 @@ def main() -> None:
 
 
 def get_app(config_path: Optional[Path] = None) -> Typer:
-    return get_app_from_config(ConfigReader(config_path).read())
+    return _get_app(get_root_path(config_path))
 
 
-def get_app_from_config(config: Config) -> Typer:
+def _get_app(config_path: Path) -> Typer:
+    current_config = read_config(config_path)
+    current_name = config_path.stem
+    current_app = get_app_from_config(current_config, current_name)
+    for sub_domestobot_path in current_config.sub_domestobots:
+        sub_app = _get_app(sub_domestobot_path)
+        current_app.add_typer(sub_app)
+    return current_app
+
+
+def get_app_from_config(config: Config, name: str = 'root') -> Typer:
     runner_selector = RunnerSelector()
     commands = get_steps(config.steps, runner_selector.dynamic_mode_runner)
-    params = AppParams(config.help_message,
+    params = AppParams(name,
+                       config.help_message,
                        commands,
                        config.default_subcommands)
     return make_app(params, runner_selector.switch_mode)
 
 
-class ConfigReader:
-    def __init__(self, path: Optional[Path] = None):
-        self.path = path or Path(getenv('DOMESTOBOT_CONFIG', CONFIG_PATH))
-
-    def read(self) -> Config:
-        try:
-            with open(self.path) as f:
-                contents = f.read()
-        except FileNotFoundError as e:
-            raise SystemExit(f"Config file '{str(self.path)}' "
-                             "not found") from e
-        try:
-            return transmute(Config, parse(contents))
-        except Exception as e:
-            raise SystemExit(f'Error while parsing config file: {e}') from e
+def read_config(path: Path) -> Config:
+    try:
+        with open(path) as f:
+            contents = f.read()
+    except FileNotFoundError as e:
+        raise SystemExit(f"Config file '{str(path)}' not found") from e
+    try:
+        return transmute(Config, parse(contents))
+    except Exception as e:
+        raise SystemExit(f'Error while parsing config file: {e}') from e
 
 
 class RunnerSelector:
@@ -105,10 +112,12 @@ def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
         if ctx.invoked_subcommand is None:
             nonlocal app
             if app_params.default_subcommands:
-                run_subcommands(app, app_params.default_subcommands)
+                callbacks = _get_callbacks(app, ctx, dry_run)
+                _run_subcommands(callbacks, app_params.default_subcommands)
             else:
                 print(ctx.get_help())
 
+    main.__name__ = app_params.callback_name
     main.__doc__ = app_params.callback_help
 
     for command in app_params.commands:
@@ -116,21 +125,44 @@ def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
     return app
 
 
-def run_subcommands(app: Typer, subcommands: List[str]) -> None:
-    callbacks = {callback.__name__: callback
-                 for command in app.registered_commands
-                 if (callback := command.callback)}
+def _get_callbacks(app: Typer, *args: Any) -> Mapping[str, Callable[[], Any]]:
+    """Get all the possible callbacks that a user could invoke.
 
-    try:
-        subcommand_callables = [callbacks[name] for name in subcommands]
-    except KeyError as e:
-        raise SystemExit(f"{e} is not a valid step")
-    for subcommand in subcommand_callables:
-        subcommand()
+    Maybe Typer provides some API to do this automatically, but probably not
+    because Click discourages calling commands from other commands:
+    https://click.palletsprojects.com/en/6.x/advanced/#invoking-other-commands
+    """
+    sub_instances = (instance for group in app.registered_groups
+                     if (instance := group.typer_instance))
+    sub_typer_infos = (typer_info for instance in sub_instances
+                       if (typer_info := instance.registered_callback))
+
+    sub_callbacks = {sub_callback.__name__: partial(sub_callback, *args)
+                     for typer_info in sub_typer_infos
+                     if (sub_callback := typer_info.callback)}
+    app_callbacks = {callback.__name__: callback
+                     for command in app.registered_commands
+                     if (callback := command.callback)}
+    return sub_callbacks | app_callbacks  # type: ignore[operator]
+
+
+def _run_subcommands(callbacks: Mapping[str, Callable[[], Any]],
+                     subcommands: List[str]) -> None:
+    for command_name in subcommands:
+        try:
+            callback = callbacks[command_name]
+        except KeyError as e:
+            raise SystemExit(f"{e} is not a valid step") from e
+        callback()
 
 
 @dataclass
 class AppParams:
+    callback_name: str
     callback_help: str
     commands: List[Callable[..., Any]]
     default_subcommands: List[str]
+
+
+def get_root_path(path: Optional[Path]) -> Path:
+    return path or Path(getenv('DOMESTOBOT_ROOT_CONFIG', CONFIG_PATH))

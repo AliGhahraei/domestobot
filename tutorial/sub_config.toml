@@ -1,0 +1,13 @@
+help_message = """\
+A domestobot from another config file."""  # Any config can have a custom help.
+
+default_subcommands = [
+    'sub_config_echo'
+]
+
+
+[[steps]]
+name = 'sub_config_echo'
+doc = 'A step inside a sub-domestobot'
+title = 'Running sub-domestobot step...'
+command = ['echo', 'Bye!']

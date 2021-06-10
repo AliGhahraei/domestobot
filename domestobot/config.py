@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from operator import xor
 from typing import Any, List, Literal, Optional, cast
 
+from typic import FilePath
 
 HELP = """Your own trusty housekeeper.
 
@@ -16,6 +17,7 @@ class Config:
     default_subcommands: List[str] = field(default_factory=list)
     steps: List['ShellStep'] = field(default_factory=list)
     help_message: str = HELP
+    sub_domestobots: List[FilePath] = field(default_factory=list)
 
 
 @dataclass

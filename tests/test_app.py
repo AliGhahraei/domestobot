@@ -9,7 +9,8 @@ from pytest import CaptureFixture, MonkeyPatch, fixture, raises
 from typer import Typer
 from typer.testing import CliRunner
 
-from domestobot.app import ConfigReader, get_app, get_app_from_config
+from domestobot.app import (get_app, get_app_from_config, get_root_path,
+                            read_config)
 from domestobot.config import Config, ShellStep
 
 DARWIN = 'Darwin'
@@ -201,32 +202,35 @@ class TestGetApp:
     def test_config_tutorial_invocation_matches_expected_commands(
             _: Mock, invoke: Invoker, capfd: CaptureFixture[str],
     ) -> None:
-        invoke(app=get_app(Path('tutorial/config_tutorial.toml')))
+        invoke(app=get_app(Path('tutorial/root.toml')))
 
         assert capfd.readouterr().out == '\n'.join([
             'Hello!',
             'First echo',
             'Second echo',
             "You're using Linux",
+            "Bye!"
         ]) + '\n'
 
 
-class TestConfigReader:
-    @staticmethod
-    @fixture
-    def test_path(tmp_path: Path) -> Path:
-        return tmp_path / 'file.toml'
-
+class TestGetRootPath:
     @staticmethod
     def test_default_path_is_correct() -> None:
-        assert (ConfigReader().path
+        assert (get_root_path(None)
                 == Path.home() / '.config/domestobot/config.toml')
 
     @staticmethod
     def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
-        monkeypatch.setenv('DOMESTOBOT_CONFIG', 'path')
+        monkeypatch.setenv('DOMESTOBOT_ROOT_CONFIG', 'path')
 
-        assert ConfigReader().path == Path('path')
+        assert get_root_path(None) == Path('path')
+
+
+class TestReadConfig:
+    @staticmethod
+    @fixture
+    def test_path(tmp_path: Path) -> Path:
+        return tmp_path / 'file.toml'
 
     @staticmethod
     def test_read_shows_message_for_invalid_config_file_format(
@@ -235,11 +239,11 @@ class TestConfigReader:
         with open(test_path, 'w') as f:
             f.write('invalid toml')
         with invalid_config('Invalid key "invalid toml" at line 1 col 12'):
-            ConfigReader(test_path).read()
+            read_config(test_path)
 
     @staticmethod
     def test_read_shows_message_for_missing_config_file(
             test_path: Path,
     ) -> None:
         with raises(SystemExit, match="Config file 'invalid_path' not found"):
-            ConfigReader(Path('invalid_path')).read()
+            read_config(Path('invalid_path'))
