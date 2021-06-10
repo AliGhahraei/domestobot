@@ -4,10 +4,18 @@ from operator import xor
 from typing import Any, List, Literal, Optional, cast
 
 
+HELP = """Your own trusty housekeeper.
+
+Run `domestobot <step_name> --help` to get more information about that
+particular step.
+"""
+
+
 @dataclass
 class Config:
     default_subcommands: List[str] = field(default_factory=list)
     steps: List['ShellStep'] = field(default_factory=list)
+    help_message: str = HELP
 
 
 @dataclass

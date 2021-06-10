@@ -35,8 +35,10 @@ def get_app(config_path: Optional[Path] = None) -> Typer:
 def get_app_from_config(config: Config) -> Typer:
     runner_selector = RunnerSelector()
     commands = get_steps(config.steps, runner_selector.dynamic_mode_runner)
-    return make_app(AppParams(commands, config.default_subcommands),
-                    runner_selector.switch_mode)
+    params = AppParams(config.help_message,
+                       commands,
+                       config.default_subcommands)
+    return make_app(params, runner_selector.switch_mode)
 
 
 class ConfigReader:
@@ -97,11 +99,6 @@ def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
 
     @app.callback(invoke_without_command=True)
     def main(ctx: Context, dry_run: bool = dry_run_option) -> None:
-        """Your own trusty housekeeper.
-
-        Run `domestobot <step_name> --help` to get more information about that
-        particular step.
-        """
         if dry_run:
             select_mode(Mode.DRY_RUN)
 
@@ -111,6 +108,8 @@ def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
                 run_subcommands(app, app_params.default_subcommands)
             else:
                 print(ctx.get_help())
+
+    main.__doc__ = app_params.callback_help
 
     for command in app_params.commands:
         app.command()(command)
@@ -132,5 +131,6 @@ def run_subcommands(app: Typer, subcommands: List[str]) -> None:
 
 @dataclass
 class AppParams:
+    callback_help: str
     commands: List[Callable[..., Any]]
     default_subcommands: List[str]

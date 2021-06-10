@@ -166,7 +166,7 @@ class TestGetAppFromConfig:
         assert "('command', 'param')" in result.stdout
 
     @staticmethod
-    def test_app_shows_help_if_default_is_not_configured(
+    def test_app_shows_help_if_default_subcommands_are_not_configured(
             invoke: Invoker, step: ShellStep,
     ) -> None:
         config = Config(steps=[step])
@@ -174,6 +174,14 @@ class TestGetAppFromConfig:
         result = invoke(app=get_app_from_config(config))
 
         assert 'Your own trusty housekeeper.' in result.stdout
+
+    @staticmethod
+    def test_app_shows_custom_help(invoke: Invoker, step: ShellStep) -> None:
+        config = Config(help_message='Custom help')
+
+        result = invoke('--help', app=get_app_from_config(config))
+
+        assert 'Custom help' in result.stdout
 
     @staticmethod
     def test_app_exits_if_default_subcommands_are_not_in_app(
