@@ -201,12 +201,12 @@ class TestGetApp:
     def test_config_tutorial_invocation_matches_expected_commands(
             _: Mock, invoke: Invoker, capfd: CaptureFixture[str],
     ) -> None:
-        invoke(app=get_app(Path('config_tutorial.toml')))
+        invoke(app=get_app(Path('tutorial/config_tutorial.toml')))
 
         assert capfd.readouterr().out == '\n'.join([
-            'hello!',
-            'hello',
-            'hello',
+            'Hello!',
+            'First echo',
+            'Second echo',
             "You're using Linux",
         ]) + '\n'
 

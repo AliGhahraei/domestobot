@@ -7,9 +7,9 @@ Your own trusty housekeeper
 
 ** Description
 A dynamic and configurable command line app to maintain *nix systems. It
-helps automating os upgrades, running backup tools, etc. It gets the
-commands to do all this from a config file, but it automatically generates
-shell completions. It can also decide whether to run a command or not
+helps automating os upgrades, running backup tools, etc. It gets its
+instructions from a config file and automatically generates shell
+completions for it. It can also decide whether to run a command or not
 depending on the platform it's running on.
 "Domestobot" is a robotic servant from the [[https://gta.fandom.com/wiki/Domestobot][GTA series]].
 
@@ -38,11 +38,9 @@ Completions for the current shell only need to be installed once running
 =domestobot --install-completion= and after that they will be dynamically
 generated using your config.
 
-You can use [[file:config_tutorial.toml][config_tutorial.toml]] as a starting point. Copy it to
-=~/.config/domestobot/config.toml= so you can test it while you read.
-
-After you're done, run =domestobot --help= to see your steps and additional
-domestobot commands.
+You can use the [[file:tutorial/config_tutorial.toml][config tutorial]] as a starting point (it's short, I promise).
+Copy it to =~/.config/domestobot/config.toml= so you can test it while you
+read . You can run =domestobot --help= to see what it can do.
 
 ** Development
 To get a working environment, it is recommended to install [[https://github.com/jazzband/pip-tools][pip-tools]] inside

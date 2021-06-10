@@ -3,14 +3,16 @@
 # TOML reference: https://toml.io/en/v1.0.0
 
 
-default_subcommands = [                    # Optional steps to run if domestobot
-    'greet_user',                          # is invoked without a step. Help is
+default_subcommands = [                    # Optional subcommands to run if
+    'greet_user',                          # invoked as `domestobot`. Help is
     'greet_twice',                         # shown if this field is not set.
     'echo_platform'
 ]
 
 
-# `[[steps]]` defines an individual step. The most basic kind is a shell step:
+# `[[steps]]` defines an individual step. They are just function wrappers around
+# shell commands that can be used as Typer sub-commands. You can read more about
+# Typer here: https://typer.tiangolo.com/
 [[steps]]
 name = 'greet_user'                        # Sub-command name to use when
                                            # running `domestobot <name>`.
@@ -18,9 +20,9 @@ name = 'greet_user'                        # Sub-command name to use when
 doc = "Demo a simple step using `echo`."   # Shown in `domestobot --help` and
                                            # in tab completion for some shells.
 
-title = 'Running `echo hello!`'            # Shown before any command is run.
+title = 'Running `echo Hello!`'            # Shown before any command is run.
 
-command = ['echo', 'hello!']               # Command segments to be passed to
+command = ['echo', 'Hello!']               # Command segments to be passed to
                                            # python's `subprocess.run`.
 
 
@@ -29,10 +31,10 @@ command = ['echo', 'hello!']               # Command segments to be passed to
 [[steps]]
 name = 'greet_twice'
 doc = "Demo multiple commands in a step."
-title = 'Running `echo hello` twice'
+title = 'Running echo twice'
 commands = [                               # A step must have one of `command`,
-     ['echo', 'hello'],                    # `commands` or `env`.
-     ['echo', 'hello'],
+     ['echo', 'First echo'],               # `commands` or `env`.
+     ['echo', 'Second echo'],
 ]
 
 
