@@ -166,11 +166,10 @@ class TestGetAppFromConfig:
         assert "('command', 'param')" in result.stdout
 
     @staticmethod
-    def test_app_shows_help_if_default_is_not_configured(invoke: Invoker) \
-            -> None:
-        config = Config(steps=[
-            ShellStep('test_step', 'doc', command=['command', 'param']),
-        ])
+    def test_app_shows_help_if_default_is_not_configured(
+            invoke: Invoker, step: ShellStep,
+    ) -> None:
+        config = Config(steps=[step])
 
         result = invoke(app=get_app_from_config(config))
 
@@ -178,15 +177,13 @@ class TestGetAppFromConfig:
 
     @staticmethod
     def test_app_exits_if_default_subcommands_are_not_in_app(
-            invoke: Invoker,
+            invoke: Invoker, step: ShellStep,
     ) -> None:
-        config = Config(
-            ['invalid_step'],
-            [ShellStep('test_step', 'doc', command=['command', 'param'])]
-        )
+        config = Config(['invalid_step'])
+        expected_args = ("'invalid_step' is not a valid step",)
 
         result = invoke(app=get_app_from_config(config))
-        expected_args = ("'invalid_step' is not a valid step",)
+
         assert result.exception.args == expected_args
 
 
