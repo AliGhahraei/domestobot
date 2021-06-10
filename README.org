@@ -14,7 +14,7 @@ depending on the platform it's running on.
 "Domestobot" is a robotic servant from the [[https://gta.fandom.com/wiki/Domestobot][GTA series]].
 
 ** Installation
-Just clone the repo and install it using [[https://pipxproject.github.io/pipx/][pipx]]:
+Just clone the repo and install it using [[https://pypa.github.io/pipx/][pipx]]:
 
 #+begin_src shell
 pipx install -e /path/to/domestobot
