@@ -6,6 +6,7 @@ from typing import Any, List, Literal, Optional, cast
 
 @dataclass
 class Config:
+    default_subcommands: List[str] = field(default_factory=list)
     steps: List['ShellStep'] = field(default_factory=list)
 
 

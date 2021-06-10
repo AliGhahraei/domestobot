@@ -3,6 +3,13 @@
 # TOML reference: https://toml.io/en/v1.0.0
 
 
+default_subcommands = [                    # Optional steps to run if domestobot
+    'greet_user',                          # is invoked without a step. Help is
+    'greet_twice',                         # shown if this field is not set.
+    'echo_platform'
+]
+
+
 # `[[steps]]` defines an individual step. The most basic kind is a shell step:
 [[steps]]
 name = 'greet_user'                        # Sub-command name to use when

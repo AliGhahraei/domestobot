@@ -60,7 +60,7 @@ class TestGetApp:
         @staticmethod
         @fixture
         def config(step: ShellStep) -> Config:
-            return Config(steps=[step])
+            return Config([step.name], [step])
 
         @staticmethod
         def test_step_is_runnable(invoke: Invoker, config: Config) -> None:
@@ -114,7 +114,7 @@ class TestGetApp:
         @staticmethod
         @fixture
         def config(steps: List[ShellStep]) -> Config:
-            return Config(steps=steps)
+            return Config([step.name for step in steps], steps=steps)
 
         @staticmethod
         def test_steps_are_runnable(invoke: Invoker, config: Config) -> None:
@@ -160,9 +160,33 @@ class TestGetApp:
             ShellStep('test_step', 'doc', command=['command', 'param']),
         ])
 
-        result = invoke('--dry-run', app=get_app(config))
+        result = invoke('--dry-run', 'test-step', app=get_app(config))
 
         assert "('command', 'param')" in result.stdout
+
+    @staticmethod
+    def test_app_shows_help_if_default_is_not_configured(invoke: Invoker) \
+            -> None:
+        config = Config(steps=[
+            ShellStep('test_step', 'doc', command=['command', 'param']),
+        ])
+
+        result = invoke(app=get_app(config))
+
+        assert 'Your own trusty housekeeper.' in result.stdout
+
+    @staticmethod
+    def test_app_exits_if_default_subcommands_are_not_in_app(
+            invoke: Invoker,
+    ) -> None:
+        config = Config(
+            ['invalid_step'],
+            [ShellStep('test_step', 'doc', command=['command', 'param'])]
+        )
+
+        result = invoke(app=get_app(config))
+        expected_args = ("'invalid_step' is not a valid step",)
+        assert result.exception.args == expected_args
 
     @staticmethod
     @patch(f'{STEPS_MODULE}.system', return_value='Linux')

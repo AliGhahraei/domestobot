@@ -32,8 +32,8 @@ def get_app(config: Optional[Config] = None) -> Typer:
     config = config or ConfigReader().read()
     runner_selector = RunnerSelector()
     commands = get_steps(config.steps, runner_selector.dynamic_mode_runner)
-    callback = make_callback(runner_selector.switch_mode, commands)
-    return make_app(AppParams(callback, commands))
+    return make_app(AppParams(commands, config.default_subcommands),
+                    runner_selector.switch_mode)
 
 
 class ConfigReader:
@@ -87,35 +87,47 @@ def dry_run(*args: Union[str, Path], capture_output: bool = False) \
     return CompletedProcess(args, 0)
 
 
-def make_callback(select_mode: Callable[[Mode], Any],
-                  commands: List[Callable[..., None]]) -> Callable[..., Any]:
+def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
+        -> Typer:
+    app = Typer()
     dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
 
+    @app.callback(invoke_without_command=True)
     def main(ctx: Context, dry_run: bool = dry_run_option) -> None:
         """Your own trusty housekeeper.
 
-        Run without specifying a step to run all of them.
         Run `domestobot <step_name> --help` to get more information about that
-        particular one.
+        particular step.
         """
         if dry_run:
             select_mode(Mode.DRY_RUN)
 
         if ctx.invoked_subcommand is None:
-            for step in commands:
-                step()
-    return main
+            nonlocal app
+            if app_params.default_subcommands:
+                run_subcommands(app, app_params.default_subcommands)
+            else:
+                print(ctx.get_help())
 
-
-def make_app(app_params: 'AppParams') -> Typer:
-    app = Typer()
-    app.callback(invoke_without_command=True)(app_params.callback)
     for command in app_params.commands:
         app.command()(command)
     return app
 
 
+def run_subcommands(app: Typer, subcommands: List[str]) -> None:
+    callbacks = {callback.__name__: callback
+                 for command in app.registered_commands
+                 if (callback := command.callback)}
+
+    try:
+        subcommand_callables = [callbacks[name] for name in subcommands]
+    except KeyError as e:
+        raise SystemExit(f"{e} is not a valid step")
+    for subcommand in subcommand_callables:
+        subcommand()
+
+
 @dataclass
 class AppParams:
-    callback: Callable[..., Any]
     commands: List[Callable[..., Any]]
+    default_subcommands: List[str]
