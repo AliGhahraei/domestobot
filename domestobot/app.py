@@ -13,7 +13,7 @@ from typic import transmute
 from xdg import xdg_config_home
 
 from domestobot.config import Config
-from domestobot.core import CommandRunner
+from domestobot.core import CommandRunner, warning
 from domestobot.steps import get_steps
 
 CONFIG_PATH = xdg_config_home() / 'domestobot' / 'root.toml'
@@ -57,8 +57,9 @@ def read_config(path: Path) -> Config:
     try:
         with open(path) as f:
             contents = f.read()
-    except FileNotFoundError as e:
-        raise SystemExit(f"Config file '{str(path)}' not found") from e
+    except FileNotFoundError:
+        warning(f'Config file {path} not found', end='\n\n')
+        return Config()
     try:
         return transmute(Config, parse(contents))
     except Exception as e:

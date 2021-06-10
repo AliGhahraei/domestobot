@@ -174,7 +174,7 @@ class TestGetAppFromConfig:
 
         result = invoke(app=get_app_from_config(config))
 
-        assert 'Your own trusty housekeeper.' in result.stdout
+        assert 'Usage:' in result.stdout
 
     @staticmethod
     def test_app_shows_custom_help(invoke: Invoker, step: ShellStep) -> None:
@@ -212,6 +212,17 @@ class TestGetApp:
             "Bye!"
         ]) + '\n'
 
+    @staticmethod
+    def test_app_shows_help_if_config_is_missing(
+            invoke: Invoker, tmp_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        path = tmp_path / 'missing_file.toml'
+
+        result = invoke(app=get_app(Path(path)))
+
+        assert f'Config file {path} not found' in capsys.readouterr().err
+        assert 'Usage:' in result.stdout
+
 
 class TestGetRootPath:
     @staticmethod
@@ -240,10 +251,3 @@ class TestReadConfig:
             f.write('invalid toml')
         with invalid_config('Invalid key "invalid toml" at line 1 col 12'):
             read_config(test_path)
-
-    @staticmethod
-    def test_read_shows_message_for_missing_config_file(
-            test_path: Path,
-    ) -> None:
-        with raises(SystemExit, match="Config file 'invalid_path' not found"):
-            read_config(Path('invalid_path'))
