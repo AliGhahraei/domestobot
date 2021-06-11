@@ -13,7 +13,7 @@ from typic import transmute
 from xdg import xdg_config_home
 
 from domestobot.config import Config
-from domestobot.core import CommandRunner, warning
+from domestobot.core import CommandRunner, warning, DomestobotError
 from domestobot.steps import get_steps
 
 CONFIG_PATH = xdg_config_home() / 'domestobot' / 'root.toml'
@@ -63,7 +63,11 @@ def read_config(path: Path) -> Config:
     try:
         return transmute(Config, parse(contents))
     except Exception as e:
-        raise SystemExit(f'Error while parsing config file: {e}') from e
+        raise ConfigError(f'Error while parsing config file: {e}') from e
+
+
+class ConfigError(DomestobotError):
+    pass
 
 
 class RunnerSelector:
@@ -153,7 +157,7 @@ def _run_subcommands(callbacks: Mapping[str, Callable[[], Any]],
         try:
             callback = callbacks[command_name]
         except KeyError as e:
-            raise SystemExit(f"{e} is not a valid step") from e
+            raise ConfigError(f"{e} is not a valid step") from e
         callback()
 
 

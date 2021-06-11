@@ -10,7 +10,7 @@ from typer import Typer
 from typer.testing import CliRunner
 
 from domestobot.app import (get_app, get_app_from_config, get_root_path,
-                            read_config)
+                            read_config, ConfigError)
 from domestobot.config import Config, ShellStep
 
 DARWIN = 'Darwin'
@@ -37,7 +37,7 @@ def invoke(cli_runner: CliRunner) -> Invoker:
 
 @contextmanager
 def invalid_config(message: str) -> Iterator[None]:
-    with raises(SystemExit,
+    with raises(ConfigError,
                 match=f'Error while parsing config file: {message}'):
         yield
 
@@ -188,12 +188,8 @@ class TestGetAppFromConfig:
     def test_app_exits_if_default_subcommands_are_not_in_app(
             invoke: Invoker, step: ShellStep,
     ) -> None:
-        config = Config(['invalid_step'])
-        expected_args = ("'invalid_step' is not a valid step",)
-
-        result = invoke(app=get_app_from_config(config))
-
-        assert result.exception.args == expected_args
+        with raises(ConfigError, match="'invalid_step' is not a valid step"):
+            invoke(app=get_app_from_config(Config(['invalid_step'])))
 
 
 class TestGetApp:
