@@ -9,8 +9,8 @@ from pytest import CaptureFixture, MonkeyPatch, fixture, raises
 from typer import Typer
 from typer.testing import CliRunner
 
-from domestobot.app import (get_app, get_app_from_config, get_root_path,
-                            read_config, ConfigError)
+from domestobot.app import (ConfigError, get_app, get_app_from_config,
+                            get_root_path, read_config)
 from domestobot.config import Config, ShellStep
 
 DARWIN = 'Darwin'
@@ -185,11 +185,15 @@ class TestGetAppFromConfig:
         assert 'Custom help' in result.stdout
 
     @staticmethod
-    def test_app_exits_if_default_subcommands_are_not_in_app(
-            invoke: Invoker, step: ShellStep,
+    def test_app_exits_without_output_if_default_subcommands_are_not_in_app(
+            invoke: Invoker, step: ShellStep, capfd: CaptureFixture[str],
     ) -> None:
+        config = Config(['test_step', 'invalid_step'], steps=[step])
+
         with raises(ConfigError, match="'invalid_step' is not a valid step"):
-            invoke(app=get_app_from_config(Config(['invalid_step'])))
+            invoke(app=get_app_from_config(config))
+
+        assert not capfd.readouterr().out
 
 
 class TestGetApp:

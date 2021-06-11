@@ -13,7 +13,7 @@ from typic import transmute
 from xdg import xdg_config_home
 
 from domestobot.config import Config
-from domestobot.core import CommandRunner, warning, DomestobotError
+from domestobot.core import CommandRunner, DomestobotError, warning
 from domestobot.steps import get_steps
 
 CONFIG_PATH = xdg_config_home() / 'domestobot' / 'root.toml'
@@ -153,12 +153,19 @@ def _get_callbacks(app: Typer, *args: Any) -> Mapping[str, Callable[[], Any]]:
 
 def _run_subcommands(callbacks: Mapping[str, Callable[[], Any]],
                      subcommands: List[str]) -> None:
-    for command_name in subcommands:
-        try:
-            callback = callbacks[command_name]
-        except KeyError as e:
-            raise ConfigError(f"{e} is not a valid step") from e
+    found_callbacks = [_search_callbacks(subcommand, callbacks)
+                       for subcommand in subcommands]
+    for callback in found_callbacks:
         callback()
+
+
+def _search_callbacks(name: str, callbacks: Mapping[str, Callable[[], Any]]) \
+        -> Callable[[], Any]:
+    try:
+        callback = callbacks[name]
+    except KeyError as e:
+        raise ConfigError(f"{e} is not a valid step") from e
+    return callback
 
 
 @dataclass
