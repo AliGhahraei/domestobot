@@ -6,11 +6,12 @@ from unittest.mock import Mock, patch
 
 from click.testing import Result
 from pytest import CaptureFixture, MonkeyPatch, fixture, raises
+from tomlkit import document, dumps
 from typer import Typer
 from typer.testing import CliRunner
 
 from domestobot.app import (ConfigError, get_app, get_app_from_config,
-                            get_root_path, read_config)
+                            get_root_path, main, read_config)
 from domestobot.config import Config, ShellStep
 
 DARWIN = 'Darwin'
@@ -38,12 +39,31 @@ def invoke(cli_runner: CliRunner) -> Invoker:
 @contextmanager
 def invalid_config(message: str) -> Iterator[None]:
     with raises(ConfigError,
-                match=f'Error while parsing config file: {message}'):
+                match=f'Error while parsing config file {message}'):
         yield
+
+
+@fixture
+def toml_path(tmp_path: Path) -> Path:
+    return tmp_path / 'config.toml'
 
 
 def assert_command_succeeded(result: Result) -> None:
     assert result.exit_code == 0
+
+
+class TestMain:
+    @staticmethod
+    def test_main_exits_with_human_friendly_validation_error_message(
+            toml_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        doc = document()
+        doc['sub_domestobots'] = 'non-list value'
+        with open(toml_path, 'w') as f:
+            f.write(dumps(doc))
+
+        with raises(SystemExit, match='value is not a valid list'):
+            main(toml_path)
 
 
 class TestGetAppFromConfig:
@@ -239,15 +259,11 @@ class TestGetRootPath:
 
 class TestReadConfig:
     @staticmethod
-    @fixture
-    def test_path(tmp_path: Path) -> Path:
-        return tmp_path / 'file.toml'
-
-    @staticmethod
     def test_read_shows_message_for_invalid_config_file_format(
-            test_path: Path,
+            toml_path: Path
     ) -> None:
-        with open(test_path, 'w') as f:
+        with open(toml_path, 'w') as f:
             f.write('invalid toml')
-        with invalid_config('Invalid key "invalid toml" at line 1 col 12'):
-            read_config(test_path)
+        with invalid_config(f'{toml_path}: Invalid key "invalid toml" at line '
+                            '1 col 12'):
+            read_config(toml_path)

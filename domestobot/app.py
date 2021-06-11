@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
@@ -7,8 +8,9 @@ from pathlib import Path
 from subprocess import CompletedProcess, run
 from typing import Any, Callable, List, Mapping, Optional, Union
 
-from pydantic import parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from tomlkit import parse
+from tomlkit.exceptions import TOMLKitError
 from typer import Context, Option, Typer
 from xdg import xdg_config_home
 
@@ -25,20 +27,19 @@ class Mode(Enum):
     DRY_RUN = auto()
 
 
-def main() -> None:
-    get_app()()
+def main(config_path: Optional[Path] = None) -> None:
+    try:
+        get_app(get_root_path(config_path))()
+    except ValidationError as e:
+        sys.exit(str(e))
 
 
-def get_app(config_path: Optional[Path] = None) -> Typer:
-    return _get_app(get_root_path(config_path))
-
-
-def _get_app(config_path: Path) -> Typer:
+def get_app(config_path: Path) -> Typer:
     current_config = read_config(config_path)
     current_name = config_path.stem
     current_app = get_app_from_config(current_config, current_name)
     for sub_domestobot_path in current_config.sub_domestobots:
-        sub_app = _get_app(sub_domestobot_path)
+        sub_app = get_app(sub_domestobot_path)
         current_app.add_typer(sub_app)
     return current_app
 
@@ -61,9 +62,11 @@ def read_config(path: Path) -> Config:
         warning(f'Config file {path} not found', end='\n\n')
         return Config()
     try:
-        return parse_obj_as(Config, parse(contents))
-    except Exception as e:
-        raise ConfigError(f'Error while parsing config file: {e}') from e
+        user_config = parse(contents)
+    except TOMLKitError as e:
+        raise ConfigError(f'Error while parsing config file {path}: {e}') \
+            from e
+    return parse_obj_as(Config, user_config)
 
 
 class ConfigError(DomestobotError):
