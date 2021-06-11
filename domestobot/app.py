@@ -7,9 +7,9 @@ from pathlib import Path
 from subprocess import CompletedProcess, run
 from typing import Any, Callable, List, Mapping, Optional, Union
 
+from pydantic import parse_obj_as
 from tomlkit import parse
 from typer import Context, Option, Typer
-from typic import transmute
 from xdg import xdg_config_home
 
 from domestobot.config import Config
@@ -61,7 +61,7 @@ def read_config(path: Path) -> Config:
         warning(f'Config file {path} not found', end='\n\n')
         return Config()
     try:
-        return transmute(Config, parse(contents))
+        return parse_obj_as(Config, parse(contents))
     except Exception as e:
         raise ConfigError(f'Error while parsing config file: {e}') from e
 
