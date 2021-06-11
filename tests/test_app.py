@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, List, Protocol
+from typing import ContextManager, Iterator, List, Protocol
 from unittest.mock import Mock, patch
 
 from click.testing import Result
@@ -11,7 +11,7 @@ from typer import Typer
 from typer.testing import CliRunner
 
 from domestobot.app import (ConfigError, get_app, get_app_from_config,
-                            get_root_path, main, read_config)
+                            get_main_app, get_root_path, main)
 from domestobot.config import Config, ShellStep
 
 DARWIN = 'Darwin'
@@ -26,7 +26,7 @@ class Invoker(Protocol):
 
 @fixture
 def cli_runner() -> CliRunner:
-    return CliRunner()
+    return CliRunner(mix_stderr=False)
 
 
 @fixture
@@ -37,10 +37,13 @@ def invoke(cli_runner: CliRunner) -> Invoker:
 
 
 @contextmanager
-def invalid_config(message: str) -> Iterator[None]:
-    with raises(ConfigError,
-                match=f'Error while parsing config file {message}'):
+def system_exit(message: str) -> Iterator[None]:
+    with raises(SystemExit, match=message):
         yield
+
+
+def invalid_config(message: str) -> ContextManager[None]:
+    return system_exit(f'Error while parsing config file {message}')
 
 
 @fixture
@@ -62,8 +65,40 @@ class TestMain:
         with open(toml_path, 'w') as f:
             f.write(dumps(doc))
 
-        with raises(SystemExit, match='value is not a valid list'):
+        with system_exit('value is not a valid list'):
             main(toml_path)
+
+    @staticmethod
+    def test_main_shows_invalid_config_file_format_message(
+            toml_path: Path
+    ) -> None:
+        with open(toml_path, 'w') as f:
+            f.write('invalid toml')
+
+        with invalid_config(f'{toml_path}: Invalid key "invalid toml" at line '
+                            '1 col 12'):
+            main(toml_path)
+
+    @staticmethod
+    @patch('domestobot.app.get_app', side_effect=Exception('test error'))
+    def test_main_exits_with_unhandled_error_message(
+            _: Mock, toml_path: Path, capsys: CaptureFixture[str],
+    ) -> None:
+        with system_exit('Unhandled error: "test error"'):
+            main(toml_path)
+
+
+class TestGetMainApp:
+    @staticmethod
+    def test_app_shows_help_if_config_is_missing(
+            invoke: Invoker, tmp_path: Path, capsys: CaptureFixture[str]
+    ) -> None:
+        path = tmp_path / 'missing_file.toml'
+
+        result = invoke(app=get_main_app(path))
+
+        assert 'Usage:' in result.stdout
+        assert f'Config file {path} not found' in capsys.readouterr().err
 
 
 class TestGetAppFromConfig:
@@ -232,17 +267,6 @@ class TestGetApp:
             "Bye!"
         ]) + '\n'
 
-    @staticmethod
-    def test_app_shows_help_if_config_is_missing(
-            invoke: Invoker, tmp_path: Path, capsys: CaptureFixture[str]
-    ) -> None:
-        path = tmp_path / 'missing_file.toml'
-
-        result = invoke(app=get_app(Path(path)))
-
-        assert f'Config file {path} not found' in capsys.readouterr().err
-        assert 'Usage:' in result.stdout
-
 
 class TestGetRootPath:
     @staticmethod
@@ -255,15 +279,3 @@ class TestGetRootPath:
         monkeypatch.setenv('DOMESTOBOT_ROOT_CONFIG', 'path')
 
         assert get_root_path(None) == Path('path')
-
-
-class TestReadConfig:
-    @staticmethod
-    def test_read_shows_message_for_invalid_config_file_format(
-            toml_path: Path
-    ) -> None:
-        with open(toml_path, 'w') as f:
-            f.write('invalid toml')
-        with invalid_config(f'{toml_path}: Invalid key "invalid toml" at line '
-                            '1 col 12'):
-            read_config(toml_path)

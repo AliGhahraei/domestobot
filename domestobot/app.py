@@ -28,10 +28,21 @@ class Mode(Enum):
 
 
 def main(config_path: Optional[Path] = None) -> None:
+    get_main_app(config_path)()
+
+
+def get_main_app(config_path: Optional[Path]) -> Typer:
     try:
-        get_app(get_root_path(config_path))()
-    except ValidationError as e:
+        app = get_app(get_root_path(config_path))
+    except ConfigNotFoundError as e:
+        warning(str(e), end='\n\n')
+        app = get_app_from_config(Config())
+    except (ValidationError, DomestobotError) as e:
         sys.exit(str(e))
+    except Exception as e:
+        sys.exit(f'Unhandled error: "{e}"')
+
+    return app
 
 
 def get_app(config_path: Path) -> Typer:
@@ -58,9 +69,9 @@ def read_config(path: Path) -> Config:
     try:
         with open(path) as f:
             contents = f.read()
-    except FileNotFoundError:
-        warning(f'Config file {path} not found', end='\n\n')
-        return Config()
+    except FileNotFoundError as e:
+        raise ConfigNotFoundError(path) from e
+
     try:
         user_config = parse(contents)
     except TOMLKitError as e:
@@ -71,6 +82,11 @@ def read_config(path: Path) -> Config:
 
 class ConfigError(DomestobotError):
     pass
+
+
+class ConfigNotFoundError(ConfigError):
+    def __init__(self, path: Path):
+        super().__init__(f'Config file {path} not found')
 
 
 class RunnerSelector:
