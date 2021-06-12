@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from pytest import raises
 
-from domestobot.config import EnvStep, ShellStep
+from domestobot._config import EnvStep, ShellStep
 
 
 class TestShellStep:

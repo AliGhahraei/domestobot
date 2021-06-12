@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from pytest import fixture
 
-from domestobot.core import CommandRunner
+from domestobot._core import CommandRunner
 
 
 @fixture

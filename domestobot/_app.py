@@ -15,9 +15,9 @@ from tomlkit.exceptions import TOMLKitError
 from typer import Context, Option, Typer
 from xdg import xdg_cache_home, xdg_config_home
 
-from domestobot.config import Config
-from domestobot.core import CommandRunner, DomestobotError, warning
-from domestobot.steps import get_steps
+from domestobot._config import Config
+from domestobot._core import CommandRunner, DomestobotError, warning
+from domestobot._steps import get_steps
 
 CONFIG_PATH = xdg_config_home() / 'domestobot' / 'root.toml'
 LOG_PATH = xdg_cache_home() / 'domestobot' / 'log'

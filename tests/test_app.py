@@ -12,13 +12,13 @@ from tomlkit import document, dumps
 from typer import Typer
 from typer.testing import CliRunner
 
-from domestobot.app import (ConfigError, get_app, get_app_from_config,
-                            get_main_app, get_root_path, main)
-from domestobot.config import Config, ShellStep
+from domestobot._app import (ConfigError, get_app, get_app_from_config,
+                             get_main_app, get_root_path, main)
+from domestobot._config import Config, ShellStep
 
 DARWIN = 'Darwin'
 UNKNOWN_OS = 'Unknown OS'
-STEPS_MODULE = 'domestobot.steps'
+STEPS_MODULE = 'domestobot._steps'
 
 
 class Invoker(Protocol):
@@ -98,7 +98,7 @@ class TestMain:
             main(toml_path)
 
     @staticmethod
-    @patch('domestobot.app.get_app', side_effect=Exception('test error'))
+    @patch('domestobot._app.get_app', side_effect=Exception('test error'))
     def test_main_exits_with_unhandled_error_message(
             _: Mock, toml_path: Path, caplog: LogCaptureFixture,
     ) -> None:
@@ -111,7 +111,7 @@ class TestMain:
         assert 'Traceback (most recent call last)' in caplog.text
 
     @staticmethod
-    @patch('domestobot.app.get_main_app')
+    @patch('domestobot._app.get_main_app')
     def test_main_creates_log_dir(
             _: Mock, toml_path: Path, log_path: Path,
     ) -> None:
@@ -120,13 +120,13 @@ class TestMain:
         assert log_path.parent.exists()
 
     @staticmethod
-    @patch('domestobot.app.get_main_app')
+    @patch('domestobot._app.get_main_app')
     def test_main_sets_logger_handler(
             _: Mock, toml_path: Path, log_path: Path,
     ) -> None:
         main(toml_path)
 
-        handler = cast(FileHandler, getLogger('domestobot.app').handlers[0])
+        handler = cast(FileHandler, getLogger('domestobot._app').handlers[0])
         assert handler.baseFilename == str(log_path)
 
 

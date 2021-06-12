@@ -2,8 +2,8 @@ from itertools import chain
 from platform import system
 from typing import Callable, Iterable, List
 
-from domestobot.config import CommandStep, EnvStep, ShellStep
-from domestobot.core import CommandRunner, title
+from domestobot._config import CommandStep, EnvStep, ShellStep
+from domestobot._core import CommandRunner, title
 
 
 def get_steps(steps: Iterable[ShellStep], runner: CommandRunner) \

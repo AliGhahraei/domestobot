@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 from asserts import assert_no_stdout, assert_stdout
 from pytest import CaptureFixture
 
-from domestobot.config import EnvStep, ShellStep
-from domestobot.steps import get_steps
+from domestobot._config import EnvStep, ShellStep
+from domestobot._steps import get_steps
 
-MODULE_UNDER_TEST = 'domestobot.steps'
+MODULE_UNDER_TEST = 'domestobot._steps'
 LINUX = 'Linux'
 
 
