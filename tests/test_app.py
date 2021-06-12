@@ -154,7 +154,7 @@ class TestGetAppFromConfig:
     def step(step_output: str) -> ShellStep:
         return ShellStep('test_step', 'doc', command=['echo', step_output])
 
-    class TestSingleStep:
+    class TestSingleStepWithDefaultSubcommands:
         @staticmethod
         @fixture
         def config(step: ShellStep) -> Config:
@@ -190,6 +190,14 @@ class TestGetAppFromConfig:
             invoke(app=get_app_from_config(config))
 
             assert step_output in capfd.readouterr().out
+
+        @staticmethod
+        def test_app_prints_commands_with_dry_run(invoke: Invoker,
+                                                  config: Config) -> None:
+            result = invoke('--dry-run', 'test-step',
+                            app=get_app_from_config(config))
+
+            assert "('echo', 'echoed value')" in result.stdout
 
     class TestMultipleSteps:
         @staticmethod
@@ -251,17 +259,6 @@ class TestGetAppFromConfig:
             output = capfd.readouterr().out
             for expected_output in outputs:
                 assert expected_output in output
-
-    @staticmethod
-    def test_app_prints_commands_with_dry_run(invoke: Invoker) -> None:
-        config = Config(steps=[
-            ShellStep('test_step', 'doc', command=['command', 'param']),
-        ])
-
-        result = invoke('--dry-run', 'test-step',
-                        app=get_app_from_config(config))
-
-        assert "('command', 'param')" in result.stdout
 
     @staticmethod
     def test_app_shows_help_if_default_subcommands_are_not_configured(
