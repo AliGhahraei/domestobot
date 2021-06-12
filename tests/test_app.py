@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 from contextlib import contextmanager
+from logging import FileHandler, getLogger
 from pathlib import Path
-from typing import ContextManager, Iterator, List, Protocol
+from typing import ContextManager, Iterator, List, Protocol, cast
 from unittest.mock import Mock, patch
 
 from click.testing import Result
-from pytest import CaptureFixture, MonkeyPatch, fixture, raises
+from pytest import (CaptureFixture, LogCaptureFixture, MonkeyPatch, fixture,
+                    mark, raises)
 from tomlkit import document, dumps
 from typer import Typer
 from typer.testing import CliRunner
@@ -22,6 +24,21 @@ STEPS_MODULE = 'domestobot.steps'
 class Invoker(Protocol):
     def __call__(*args: str, app: Typer) -> Result:
         pass
+
+
+@fixture
+def disable_log_file(monkeypatch: MonkeyPatch) -> Iterator[None]:
+    with monkeypatch.context() as m:
+        m.setenv('DOMESTOBOT_LOG', '')
+        yield
+
+
+@fixture
+def log_path(tmp_path: Path, monkeypatch: MonkeyPatch) -> Iterator[Path]:
+    with monkeypatch.context() as m:
+        logdir = tmp_path / 'intermediate_dir' / 'log'
+        m.setenv('DOMESTOBOT_LOG', str(logdir))
+        yield logdir
 
 
 @fixture
@@ -55,6 +72,7 @@ def assert_command_succeeded(result: Result) -> None:
     assert result.exit_code == 0
 
 
+@mark.usefixtures('disable_log_file')
 class TestMain:
     @staticmethod
     def test_main_exits_with_human_friendly_validation_error_message(
@@ -82,10 +100,34 @@ class TestMain:
     @staticmethod
     @patch('domestobot.app.get_app', side_effect=Exception('test error'))
     def test_main_exits_with_unhandled_error_message(
-            _: Mock, toml_path: Path, capsys: CaptureFixture[str],
+            _: Mock, toml_path: Path, caplog: LogCaptureFixture,
     ) -> None:
-        with system_exit('Unhandled error: "test error"'):
+        error = (r'Unhandled error, please report it to the maintainer: '
+                 '"test error"')
+
+        with system_exit(error):
             main(toml_path)
+
+        assert 'Traceback (most recent call last)' in caplog.text
+
+    @staticmethod
+    @patch('domestobot.app.get_main_app')
+    def test_main_creates_log_dir(
+            _: Mock, toml_path: Path, log_path: Path,
+    ) -> None:
+        main(toml_path)
+
+        assert log_path.parent.exists()
+
+    @staticmethod
+    @patch('domestobot.app.get_main_app')
+    def test_main_sets_logger_handler(
+            _: Mock, toml_path: Path, log_path: Path,
+    ) -> None:
+        main(toml_path)
+
+        handler = cast(FileHandler, getLogger('domestobot.app').handlers[0])
+        assert handler.baseFilename == str(log_path)
 
 
 class TestGetMainApp:

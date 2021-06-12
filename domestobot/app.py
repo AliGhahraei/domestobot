@@ -3,6 +3,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
+from logging import FileHandler, getLogger
 from os import getenv
 from pathlib import Path
 from subprocess import CompletedProcess, run
@@ -12,14 +13,18 @@ from pydantic import ValidationError, parse_obj_as
 from tomlkit import parse
 from tomlkit.exceptions import TOMLKitError
 from typer import Context, Option, Typer
-from xdg import xdg_config_home
+from xdg import xdg_cache_home, xdg_config_home
 
 from domestobot.config import Config
 from domestobot.core import CommandRunner, DomestobotError, warning
 from domestobot.steps import get_steps
 
 CONFIG_PATH = xdg_config_home() / 'domestobot' / 'root.toml'
+LOG_PATH = xdg_cache_home() / 'domestobot' / 'log'
 DRY_RUN_HELP = 'Print commands for every step instead of running them'
+
+
+logger = getLogger(__name__)
 
 
 class Mode(Enum):
@@ -28,7 +33,17 @@ class Mode(Enum):
 
 
 def main(config_path: Optional[Path] = None) -> None:
+    set_logger_handler()
     get_main_app(config_path)()
+
+
+def set_logger_handler() -> None:
+    if filename := getenv('DOMESTOBOT_LOG', LOG_PATH):
+        path = Path(filename)
+        path.parent.mkdir(exist_ok=True)
+        while logger.handlers:
+            logger.removeHandler(logger.handlers[0])
+        logger.addHandler(FileHandler(filename=path))
 
 
 def get_main_app(config_path: Optional[Path]) -> Typer:
@@ -40,7 +55,8 @@ def get_main_app(config_path: Optional[Path]) -> Typer:
     except (ValidationError, DomestobotError) as e:
         sys.exit(str(e))
     except Exception as e:
-        sys.exit(f'Unhandled error: "{e}"')
+        logger.exception('')
+        sys.exit(f'Unhandled error, please report it to the maintainer: "{e}"')
 
     return app
 
