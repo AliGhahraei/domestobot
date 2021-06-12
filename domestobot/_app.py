@@ -30,7 +30,7 @@ NamesToCallbacks = Mapping[str, Callable[..., Any]]
 logger = getLogger(__name__)
 
 
-class Mode(Enum):
+class RunningMode(Enum):
     DEFAULT = auto()
     DRY_RUN = auto()
 
@@ -111,10 +111,10 @@ class ConfigNotFoundError(ConfigError):
 
 class RunnerSelector:
     def __init__(self) -> None:
-        self._mode = Mode.DEFAULT
+        self._mode = RunningMode.DEFAULT
         self._modes = {
-            Mode.DEFAULT: default_run,
-            Mode.DRY_RUN: dry_run,
+            RunningMode.DEFAULT: default_run,
+            RunningMode.DRY_RUN: dry_run,
         }
 
     @property
@@ -128,7 +128,7 @@ class RunnerSelector:
 
         return Runner()
 
-    def switch_mode(self, mode: Mode) -> None:
+    def switch_mode(self, mode: RunningMode) -> None:
         self._mode = mode
 
 
@@ -143,15 +143,15 @@ def dry_run(*args: Union[str, Path], capture_output: bool = False) \
     return CompletedProcess(args, 0)
 
 
-def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
-        -> Typer:
+def make_app(app_params: 'AppParams',
+             select_mode: Callable[[RunningMode], Any]) -> Typer:
     app = Typer()
     dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
 
     @app.callback(invoke_without_command=True)
     def main(ctx: Context, dry_run: Optional[bool] = dry_run_option) -> None:
         if dry_run is True:  # https://github.com/tiangolo/typer/issues/279
-            select_mode(Mode.DRY_RUN)
+            select_mode(RunningMode.DRY_RUN)
 
         if ctx.invoked_subcommand is None:
             nonlocal app
