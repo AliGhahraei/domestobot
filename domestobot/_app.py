@@ -149,8 +149,8 @@ def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
     dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
 
     @app.callback(invoke_without_command=True)
-    def main(ctx: Context, dry_run: bool = dry_run_option) -> None:
-        if dry_run:
+    def main(ctx: Context, dry_run: Optional[bool] = dry_run_option) -> None:
+        if dry_run is True:  # https://github.com/tiangolo/typer/issues/279
             select_mode(Mode.DRY_RUN)
 
         if ctx.invoked_subcommand is None:

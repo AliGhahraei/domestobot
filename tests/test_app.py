@@ -192,12 +192,26 @@ class TestGetAppFromConfig:
             assert step_output in capfd.readouterr().out
 
         @staticmethod
-        def test_app_prints_commands_with_dry_run(invoke: Invoker,
-                                                  config: Config) -> None:
+        def test_app_prints_commands_with_dry_run(
+                invoke: Invoker, config: Config, step_output: str,
+        ) -> None:
             result = invoke('--dry-run', 'test-step',
                             app=get_app_from_config(config))
 
-            assert "('echo', 'echoed value')" in result.stdout
+            assert f"('echo', '{step_output}')" in result.stdout
+
+        @staticmethod
+        def test_app_callback_works_the_same_as_normal_function(
+                step_output: str, config: Config, capfd: CaptureFixture[str],
+        ) -> None:
+            app = get_app_from_config(config)
+            f = app.registered_callback.callback  # type: ignore[union-attr]
+            ctx = Mock()
+            ctx.invoked_subcommand = None
+
+            f(ctx)  # type: ignore[misc]
+
+            assert f'{step_output}\n' == capfd.readouterr().out
 
     class TestMultipleSteps:
         @staticmethod
