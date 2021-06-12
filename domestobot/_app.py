@@ -19,7 +19,7 @@ from domestobot._config import Config
 from domestobot._core import CommandRunner, DomestobotError, warning
 from domestobot._steps import get_steps
 
-CONFIG_PATH = xdg_config_home() / 'domestobot' / 'root.toml'
+CONFIG_ROOT = xdg_config_home() / 'domestobot'
 LOG_PATH = xdg_cache_home() / 'domestobot' / 'log'
 DRY_RUN_HELP = 'Print commands for every step instead of running them'
 
@@ -212,4 +212,4 @@ class AppParams:
 
 
 def get_root_path(path: Optional[Path]) -> Path:
-    return path or Path(getenv('DOMESTOBOT_ROOT_CONFIG', CONFIG_PATH))
+    return path or Path(getenv('DOMESTOBOT_ROOT', CONFIG_ROOT)) / 'root.toml'

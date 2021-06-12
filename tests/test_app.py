@@ -318,6 +318,6 @@ class TestGetRootPath:
 
     @staticmethod
     def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
-        monkeypatch.setenv('DOMESTOBOT_ROOT_CONFIG', 'path')
+        monkeypatch.setenv('DOMESTOBOT_ROOT', 'root_path')
 
-        assert get_root_path(None) == Path('path')
+        assert get_root_path(None) == Path('root_path/root.toml')
