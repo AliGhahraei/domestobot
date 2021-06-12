@@ -37,8 +37,8 @@ Completions for the current shell only need to be installed once running
 =domestobot --install-completion= and after that they will be dynamically
 generated using your config.
 
-You can use the [[file:tutorial/root.toml][config tutorial]] as a starting point (it's short, I promise).
-Copy it to =~/.config/domestobot/root.toml= so you can test it while you
+You can use the [[file:tutorial/][config tutorial]] as a starting point (it's short, I promise).
+Copy the directory to =~/.config/domestobot/= so you can test it while you
 read. Once you copy it, you can run =domestobot --help= to see what
 sub-commands (steps) and options are available.
 
