@@ -7,12 +7,13 @@ from logging import FileHandler, getLogger
 from os import getenv
 from pathlib import Path
 from subprocess import CompletedProcess, run
-from typing import Any, Callable, List, Mapping, Optional, Union
+from typing import Any, Callable, Iterable, List, Mapping, Optional, Union
 
 from pydantic import ValidationError, parse_obj_as
 from tomlkit import parse
 from tomlkit.exceptions import TOMLKitError
 from typer import Context, Option, Typer
+from typer.models import CommandInfo, TyperInfo
 from xdg import xdg_cache_home, xdg_config_home
 
 from domestobot._config import Config
@@ -22,6 +23,8 @@ from domestobot._steps import get_steps
 CONFIG_ROOT = xdg_config_home() / 'domestobot'
 LOG_PATH = xdg_cache_home() / 'domestobot' / 'log'
 DRY_RUN_HELP = 'Print commands for every step instead of running them'
+
+NamesToCallbacks = Mapping[str, Callable[..., Any]]
 
 
 logger = getLogger(__name__)
@@ -48,7 +51,7 @@ def set_logger_handler() -> None:
 
 def get_main_app(config_path: Optional[Path]) -> Typer:
     try:
-        app = get_app(get_root_path(config_path))
+        app = get_app(get_path_or_default(config_path))
     except ConfigNotFoundError as e:
         warning(str(e), end='\n\n')
         app = get_app_from_config(Config())
@@ -62,6 +65,7 @@ def get_main_app(config_path: Optional[Path]) -> Typer:
 
 
 def get_app(config_path: Path) -> Typer:
+    """Build a Typer app using config_path as its specification."""
     current_config = read_config(config_path)
     current_name = config_path.stem
     current_app = get_app_from_config(current_config, current_name)
@@ -152,7 +156,8 @@ def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
         if ctx.invoked_subcommand is None:
             nonlocal app
             if app_params.default_subcommands:
-                callbacks = _get_callbacks(app, ctx, dry_run)
+                callbacks = _get_groups_and_commands_callbacks(app, ctx,
+                                                               dry_run)
                 _run_subcommands(callbacks, app_params.default_subcommands)
             else:
                 print(ctx.get_help())
@@ -165,36 +170,54 @@ def make_app(app_params: 'AppParams', select_mode: Callable[[Mode], Any]) \
     return app
 
 
-def _get_callbacks(app: Typer, *args: Any) -> Mapping[str, Callable[[], Any]]:
-    """Get all the possible callbacks that a user could invoke.
+def _get_groups_and_commands_callbacks(app: Typer, *sub_groups_args: Any) \
+        -> NamesToCallbacks:
+    """Get registered callbacks partially applying sub_groups_args to groups.
 
     Maybe Typer provides some API to do this automatically, but probably not
     because Click discourages calling commands from other commands:
     https://click.palletsprojects.com/en/6.x/advanced/#invoking-other-commands
     """
+    return {**get_groups_callbacks(app, *sub_groups_args),
+            **get_commands_callbacks(app)}
+
+
+def get_groups_callbacks(app: Typer, *args: Any) -> NamesToCallbacks:
+    """Get names from app.registered_groups mapped to their callback.
+
+    Search through every typer_instance from registered_groups, get their
+    registered callbacks and partially apply `args` to them.
+    """
     sub_instances = (instance for group in app.registered_groups
                      if (instance := group.typer_instance))
     sub_typer_infos = (typer_info for instance in sub_instances
                        if (typer_info := instance.registered_callback))
-
-    sub_callbacks = {sub_callback.__name__: partial(sub_callback, *args)
-                     for typer_info in sub_typer_infos
-                     if (sub_callback := typer_info.callback)}
-    app_callbacks = {callback.__name__: callback
-                     for command in app.registered_commands
-                     if (callback := command.callback)}
-    return sub_callbacks | app_callbacks  # type: ignore[operator]
+    return _get_names_to_callbacks(sub_typer_infos, *args)
 
 
-def _run_subcommands(callbacks: Mapping[str, Callable[[], Any]],
-                     subcommands: List[str]) -> None:
+def get_commands_callbacks(app: Typer, *args: Any) -> NamesToCallbacks:
+    """Get every name from app.registered_commands mapped to its callback.
+
+    Get callbacks from registered_commands and partially apply `args` to them.
+    """
+    return _get_names_to_callbacks(app.registered_commands, *args)
+
+
+def _get_names_to_callbacks(iterable: Iterable[Union[TyperInfo, CommandInfo]],
+                            *args: Any) -> NamesToCallbacks:
+    return {callback.__name__: partial(callback, *args) for item in iterable
+            if (callback := item.callback)}
+
+
+def _run_subcommands(callbacks: NamesToCallbacks, subcommands: List[str]) \
+        -> None:
     found_callbacks = [_search_callbacks(subcommand, callbacks)
                        for subcommand in subcommands]
     for callback in found_callbacks:
         callback()
 
 
-def _search_callbacks(name: str, callbacks: Mapping[str, Callable[[], Any]]) \
+def _search_callbacks(name: str, callbacks: NamesToCallbacks) \
         -> Callable[[], Any]:
     try:
         callback = callbacks[name]
@@ -211,5 +234,15 @@ class AppParams:
     default_subcommands: List[str]
 
 
-def get_root_path(path: Optional[Path]) -> Path:
-    return path or Path(getenv('DOMESTOBOT_ROOT', CONFIG_ROOT)) / 'root.toml'
+def get_path_or_default(path: Optional[Path]) -> Path:
+    return path or get_root_path()
+
+
+def get_root_dir() -> Path:
+    """Get envvar `DOMESTOBOT_ROOT` or default path."""
+    return Path(getenv('DOMESTOBOT_ROOT', CONFIG_ROOT))
+
+
+def get_root_path() -> Path:
+    """Get configured root config file path."""
+    return get_root_dir() / 'root.toml'

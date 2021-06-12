@@ -13,7 +13,7 @@ from typer import Typer
 from typer.testing import CliRunner
 
 from domestobot._app import (ConfigError, get_app, get_app_from_config,
-                             get_main_app, get_root_path, main)
+                             get_main_app, get_path_or_default, main)
 from domestobot._config import Config, ShellStep
 
 DARWIN = 'Darwin'
@@ -310,14 +310,14 @@ class TestGetApp:
         ]) + '\n'
 
 
-class TestGetRootPath:
+class TestGetPathOrDefault:
     @staticmethod
     def test_default_path_is_correct() -> None:
-        assert (get_root_path(None)
+        assert (get_path_or_default(None)
                 == Path.home() / '.config/domestobot/root.toml')
 
     @staticmethod
     def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
         monkeypatch.setenv('DOMESTOBOT_ROOT', 'root_path')
 
-        assert get_root_path(None) == Path('root_path/root.toml')
+        assert get_path_or_default(None) == Path('root_path/root.toml')
