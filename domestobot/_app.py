@@ -27,6 +27,7 @@ DRY_RUN_HELP = 'Print commands for every step instead of running them'
 NamesToCallbacks = Mapping[str, Callable[..., Any]]
 
 
+dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
 logger = getLogger(__name__)
 
 
@@ -146,7 +147,6 @@ def dry_run(*args: Union[str, Path], capture_output: bool = False) \
 def make_app(app_params: 'AppParams',
              select_mode: Callable[[RunningMode], Any]) -> Typer:
     app = Typer()
-    dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
 
     @app.callback(invoke_without_command=True)
     def main(ctx: Context, dry_run: Optional[bool] = dry_run_option) -> None:
