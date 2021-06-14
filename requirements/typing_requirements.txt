@@ -37,8 +37,8 @@ toml==0.10.2 \
     --hash=sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b \
     --hash=sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f
     # via mypy
-types-click==7.1.0 \
-    --hash=sha256:1b37e9e63ec1f4e67bb8016afac882ec94bcb98a09b92bebde8f1e0f0484e6ed
+types-click==7.1.1 \
+    --hash=sha256:b1db0fb31a6d4a31c4282c231827cbdab628b0d504b016937822d943cd5e40a5
     # via -r requirements/typing_requirements.in
 types-pkg-resources==0.1.2 \
     --hash=sha256:42d640500de564f1ccc21f918117afadf78039e4fa7f513c647ccf742d609aeb
