@@ -26,6 +26,8 @@ Alternatively, you can also use plain pip:
 pip install --user -e /path/to/domestobot
 #+end_src
 
+You could also install from [[https://pypi.org/project/domestobot/][PyPI]] if you don't want/need the latest changes.
+
 ** Usage
 Domestobot runs a series of =steps=, which are simple functions that invoke
 shell commands under the hood. Their contents are defined in a config file.
@@ -41,6 +43,12 @@ You can use the [[file:tutorial/][config tutorial]] as a starting point (it's sh
 Copy the directory to =~/.config/domestobot/= so you can test it while you
 read. Once you copy it, you can run =domestobot --help= to see what
 sub-commands (steps) and options are available.
+
+** Usage as library
+Domestobot can also be used as a library. The apps created by
+=domestobot.get_app= are regular [[https://github.com/tiangolo/typer][Typer]] applications, so you can use them
+with add_typer to include them in a bigger application. You could look at
+[[https://github.com/AliGhahraei/typer-scripts/][typer-scripts]] to see how I do it.
 
 ** Development
 To get a working environment, it is recommended to install [[https://github.com/jazzband/pip-tools][pip-tools]] inside
