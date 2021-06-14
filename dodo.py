@@ -12,6 +12,7 @@ MAIN_REQUIREMENTS_SOURCE = 'setup.cfg'
 MAIN_REQUIREMENTS_FILE = 'requirements.txt'
 EXTRA_DEPENDENCIES: Dict[str, List[str]] = {
     'linting_requirements.txt': [],
+    'packaging_requirements.txt': [],
     'test_requirements.txt': [MAIN_REQUIREMENTS_FILE],
     'typing_requirements.txt': [MAIN_REQUIREMENTS_FILE],
 }
@@ -32,7 +33,8 @@ def task_sync() -> Dict[str, Any]:
 
 def task_sort_imports() -> Iterator[Dict[str, Any]]:
     """Sort import statements in the project's python files."""
-    for filepath in glob('**/*.py', recursive=True):
+    for filepath in [path for path in glob('**/*.py', recursive=True)
+                     if not path.startswith('build')]:
         yield {
             'name': filepath,
             'file_dep': [filepath],
