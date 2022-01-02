@@ -33,6 +33,7 @@ def typing(session: nox.Session) -> None:
     install_package(session)
     install_test_packages(session)
     install_reqs('typing_requirements.txt', session)
+    install_reqs('toolchain_requirements.txt', session)
     session.run('mypy')
 
 
