@@ -35,7 +35,7 @@ pydantic==1.8.2 \
     --hash=sha256:e710876437bc07bd414ff453ac8ec63d219e7690128d925c6e82889d674bb505 \
     --hash=sha256:ea5cb40a3b23b3265f6325727ddfc45141b08ed665458be8c6285e7b85bd73a1 \
     --hash=sha256:fec866a0b59f372b7e776f2d7308511784dace622e0992a0b59ea3ccee0ae833
-    # via domestobot (setup.cfg)
+    # via domestobot (pyproject.toml)
 shellingham==1.4.0 \
     --hash=sha256:4855c2458d6904829bd34c299f11fdeed7cfefbf8a2c522e4caea6cd76b3171e \
     --hash=sha256:536b67a0697f2e4af32ab176c00a50ac2899c5a05e0d8e2dadac8e58888283f9
@@ -43,11 +43,11 @@ shellingham==1.4.0 \
 tomlkit==0.7.2 \
     --hash=sha256:173ad840fa5d2aac140528ca1933c29791b79a374a0861a80347f42ec9328117 \
     --hash=sha256:d7a454f319a7e9bd2e249f239168729327e4dd2d27b17dc68be264ad1ce36754
-    # via domestobot (setup.cfg)
+    # via domestobot (pyproject.toml)
 typer[all]==0.3.2 \
     --hash=sha256:5455d750122cff96745b0dec87368f56d023725a7ebc9d2e54dd23dc86816303 \
     --hash=sha256:ba58b920ce851b12a2d790143009fa00ac1d05b3ff3257061ff69dbdfc3d161b
-    # via domestobot (setup.cfg)
+    # via domestobot (pyproject.toml)
 typing-extensions==3.10.0.0 \
     --hash=sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497 \
     --hash=sha256:50b6f157849174217d0656f99dc82fe932884fb250826c18350e159ec6cdf342 \
@@ -56,4 +56,4 @@ typing-extensions==3.10.0.0 \
 xdg==5.1.0 \
     --hash=sha256:3949564ca3c204e7a7fa72d85f55fb436c0e6108506e3eb61f3f4cf5be35deca \
     --hash=sha256:eb021156d2e1897e3cfe16bc0cd7aee6dd8157c8015a4cfbf4b495ed730226e6
-    # via domestobot (setup.cfg)
+    # via domestobot (pyproject.toml)
