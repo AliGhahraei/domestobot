@@ -1,6 +1,35 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+
+[project]
+name = "domestobot"
+version = "0.1.1"
+description = "Your own trusty housekeeper"
+readme = {text = "https://github.com/AliGhahraei/domestobot", content-type="text/plain"}
+authors = [{name = "Ali Ghahraei Figueroa", email = "aligf94@gmail.com"}]
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Unix",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "typer[all]",
+    "tomlkit",
+    "pydantic",
+    "xdg",
+]
+
+  [project.scripts]
+  domestobot = "domestobot._app:main"
+
+  [project.urls]
+  Home = "https://github.com/AliGhahraei/domestobot"
 
 
 [tool.coverage]
@@ -18,3 +47,41 @@ build-backend = "setuptools.build_meta"
   ]
   fail_under = 100
   show_missing = true
+
+
+[tool.mypy]
+files = ['domestobot', 'tests', '*.py']
+strict = true
+plugins = [
+    "pydantic.mypy",
+]
+
+  [[tool.mypy.overrides]]
+  module = 'doit.*'
+  ignore_missing_imports = true
+
+  [[tool.mypy.overrides]]
+  module = 'nox.*'
+  ignore_missing_imports = true
+
+  [[tool.mypy.overrides]]
+  module = 'noxfile'
+  disallow_untyped_decorators = false
+
+  [[tool.mypy.overrides]]
+  module = 'setuptools.*'
+  ignore_missing_imports = true
+
+  [[tool.mypy.overrides]]
+  module = 'mypy-sh.*'
+  ignore_missing_imports = true
+
+  [[tool.mypy.overrides]]
+  module = 'tomlkit.*'
+  no_implicit_reexport = false
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
