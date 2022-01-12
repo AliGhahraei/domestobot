@@ -4,6 +4,10 @@
 #
 #    doit compile
 #
+argcomplete==1.12.3 \
+    --hash=sha256:291f0beca7fd49ce285d2f10e4c1c77e9460cf823eef2de54df0c0fec88b0d81 \
+    --hash=sha256:2c7dbffd8c045ea534921e63b0be6fe65e88599990d8dc408ac8c542b72a5445
+    # via nox
 click==8.0.3 \
     --hash=sha256:353f466495adaeb40b6b5f592f9f91cb22372351c84caeb068132442a4518ef3 \
     --hash=sha256:410e932b050f5eed773c4cda94de75971c89cdb3155a72a0831139a79e5ecb5b
@@ -14,6 +18,14 @@ cloudpickle==2.0.0 \
     --hash=sha256:5cd02f3b417a783ba84a4ec3e290ff7929009fe51f6405423cfccfadd43ba4a4 \
     --hash=sha256:6b2df9741d06f43839a3275c4e6632f7df6487a1f181f5f46a052d3c917c3d11
     # via doit
+colorlog==6.6.0 \
+    --hash=sha256:344f73204009e4c83c5b6beb00b3c45dc70fcdae3c80db919e0a4171d006fde8 \
+    --hash=sha256:351c51e866c86c3217f08e4b067a7974a678be78f07f85fc2d55b8babde6d94e
+    # via nox
+distlib==0.3.4 \
+    --hash=sha256:6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b \
+    --hash=sha256:e4b58818180336dc9c529bfb9a0b58728ffc09ad92027a3f30b7cd91e3458579
+    # via virtualenv
 doit==0.34.0 \
     --hash=sha256:7b913896a9ade2ac8e8c4f34373866be425c12ae443accf04ed0be630cb8aa13 \
     --hash=sha256:8ef1de105cbca939c73e836dff86c812c9228e11ed8702f6955b7a086caac02d
@@ -22,6 +34,22 @@ doit-tools==0.1.4 \
     --hash=sha256:6eb9ddcf15cd9e773ceb257dccd7bfbbb3b99dd4c0feb7e8368169feb89d0e1c \
     --hash=sha256:efaca41574c972b733de2b490fd54d14278dc792948ad198efde46e9a4e428e2
     # via -r requirements/toolchain_requirements.in
+filelock==3.4.2 \
+    --hash=sha256:38b4f4c989f9d06d44524df1b24bd19e167d851f19b50bf3e3559952dddc5b80 \
+    --hash=sha256:cf0fc6a2f8d26bd900f19bf33915ca70ba4dd8c56903eeb14e1e7a2fd7590146
+    # via virtualenv
+nox==2022.1.7 \
+    --hash=sha256:b375238cebb0b9df2fab74b8d0ce1a50cd80df60ca2e13f38f539454fcd97d7e \
+    --hash=sha256:efee12f02d39405b16d68f60e7a06fe1fc450ae58669d6cdda8c7f48e3bae9e3
+    # via nox-tools
+nox-tools==0.1.0 \
+    --hash=sha256:a7b6aeb4d64857b6b6f77f571c662a44dafc537fdb244c964b2a68d3309b17c7 \
+    --hash=sha256:e89f3c518778a17413f02f82a610bae8639c2e81413f45f3223f952bdbeb0d38
+    # via -r requirements/toolchain_requirements.in
+packaging==21.3 \
+    --hash=sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb \
+    --hash=sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522
+    # via nox
 pep517==0.12.0 \
     --hash=sha256:931378d93d11b298cf511dd634cf5ea4cb249a28ef84160b3247ee9afb4e8ab0 \
     --hash=sha256:dd884c326898e2c6e11f9e0b64940606a93eb10ea022a2e067959f3a110cf161
@@ -30,9 +58,25 @@ pip-tools==6.4.0 \
     --hash=sha256:65553a15b1ba34be5e43889345062e38fb9b219ffa23b084ca0d4c4039b6f53b \
     --hash=sha256:bb2c3272bc229b4a6d25230ebe255823aba1aa466a0d698c48ab7eb5ab7efdc9
     # via -r requirements/toolchain_requirements.in
+platformdirs==2.4.1 \
+    --hash=sha256:1d7385c7db91728b83efd0ca99a5afb296cab9d0ed8313a45ed8ba17967ecfca \
+    --hash=sha256:440633ddfebcc36264232365d7840a970e75e1018d15b4327d11f91909045fda
+    # via virtualenv
+py==1.11.0 \
+    --hash=sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719 \
+    --hash=sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378
+    # via nox
 pyinotify==0.9.6 \
     --hash=sha256:9c998a5d7606ca835065cdabc013ae6c66eb9ea76a00a1e3bc6e0cfe2b4f71f4
     # via doit
+pyparsing==3.0.6 \
+    --hash=sha256:04ff808a5b90911829c55c4e26f75fa5ca8a2f5f36aa3a51f68e27033341d3e4 \
+    --hash=sha256:d9bdec0013ef1eb5a84ab39a3b3868911598afa494f5faa038647101504e2b81
+    # via packaging
+six==1.16.0 \
+    --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
+    --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
+    # via virtualenv
 tomli==2.0.0 \
     --hash=sha256:b5bde28da1fed24b9bd1d4d2b8cba62300bfb4ec9a6187a957e8ddb9434c5224 \
     --hash=sha256:c292c34f58502a1eb2bbb9f5bbc9a5ebc37bee10ffb8c2d6bbdfa8eb13cc14e1
@@ -43,6 +87,10 @@ tomlkit==0.8.0 \
     # via
     #   -c requirements/requirements.txt
     #   doit-tools
+virtualenv==20.13.0 \
+    --hash=sha256:339f16c4a86b44240ba7223d0f93a7887c3ca04b5f9c8129da7958447d079b09 \
+    --hash=sha256:d8458cf8d59d0ea495ad9b34c2599487f8a7772d796f9910858376d1600dd2dd
+    # via nox
 wheel==0.37.1 \
     --hash=sha256:4bdcd7d840138086126cd09254dc6195fb4fc6f01c050a1d7236f2630db1d22a \
     --hash=sha256:e9a504e793efbca1b8e0e9cb979a249cf4a0a7b5b8c9e8b65a5e39d49529c1c4
