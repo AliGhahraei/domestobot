@@ -11,5 +11,5 @@ jobs:
     - uses: "actions/setup-python@v2"
       with:
         python-version: "3.9"
-    - run: pip install -c requirements/toolchain_requirements.txt nox-tools
+    - run: pip install -r requirements/toolchain_requirements.txt
     - run: nox
