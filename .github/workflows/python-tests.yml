@@ -8,5 +8,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: excitedleigh/setup-nox@v2.0.0
+    - run: pip install -c requirements/toolchain_requirements.txt nox-tools
     - run: nox
