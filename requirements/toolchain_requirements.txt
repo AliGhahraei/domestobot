@@ -26,9 +26,9 @@ distlib==0.3.4 \
     --hash=sha256:6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b \
     --hash=sha256:e4b58818180336dc9c529bfb9a0b58728ffc09ad92027a3f30b7cd91e3458579
     # via virtualenv
-doit==0.34.0 \
-    --hash=sha256:7b913896a9ade2ac8e8c4f34373866be425c12ae443accf04ed0be630cb8aa13 \
-    --hash=sha256:8ef1de105cbca939c73e836dff86c812c9228e11ed8702f6955b7a086caac02d
+doit==0.34.1 \
+    --hash=sha256:49467c1bf8850a292e5fd0254ee1b219f6fd8202a0d3d4bf33af3c2dfb58d688 \
+    --hash=sha256:772a6502f4fd2d31ef3520a9f36f4b6f81fba50c958c207943918f30a3444b30
     # via doit-tools
 doit-tools==0.1.4 \
     --hash=sha256:6eb9ddcf15cd9e773ceb257dccd7bfbbb3b99dd4c0feb7e8368169feb89d0e1c \
@@ -42,9 +42,9 @@ nox==2022.1.7 \
     --hash=sha256:b375238cebb0b9df2fab74b8d0ce1a50cd80df60ca2e13f38f539454fcd97d7e \
     --hash=sha256:efee12f02d39405b16d68f60e7a06fe1fc450ae58669d6cdda8c7f48e3bae9e3
     # via nox-tools
-nox-tools==0.1.0 \
-    --hash=sha256:a7b6aeb4d64857b6b6f77f571c662a44dafc537fdb244c964b2a68d3309b17c7 \
-    --hash=sha256:e89f3c518778a17413f02f82a610bae8639c2e81413f45f3223f952bdbeb0d38
+nox-tools==0.2.0 \
+    --hash=sha256:7ded4ec0a9fb2bf636033ab314bb0bd4e1a8d50e71840a5fc2e04ee508048341 \
+    --hash=sha256:fbc751bbeaa42d061afce4245afd6506523edf8ff50da011dd4042b9119aa8bc
     # via -r requirements/toolchain_requirements.in
 packaging==21.3 \
     --hash=sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb \
@@ -69,9 +69,9 @@ py==1.11.0 \
 pyinotify==0.9.6 \
     --hash=sha256:9c998a5d7606ca835065cdabc013ae6c66eb9ea76a00a1e3bc6e0cfe2b4f71f4
     # via doit
-pyparsing==3.0.6 \
-    --hash=sha256:04ff808a5b90911829c55c4e26f75fa5ca8a2f5f36aa3a51f68e27033341d3e4 \
-    --hash=sha256:d9bdec0013ef1eb5a84ab39a3b3868911598afa494f5faa038647101504e2b81
+pyparsing==3.0.7 \
+    --hash=sha256:18ee9022775d270c55187733956460083db60b37d0d0fb357445f3094eed3eea \
+    --hash=sha256:a6c06a88f252e6c322f65faf8f418b16213b51bdfaece0524c1c1bc30c63c484
     # via packaging
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
