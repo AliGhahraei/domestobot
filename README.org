@@ -1,5 +1,3 @@
-* NO LONGER MAINTAINED
-
 * domestobot
 Your own trusty housekeeper
 
