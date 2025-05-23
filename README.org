@@ -3,7 +3,7 @@ Your own trusty housekeeper
 
 [[https://github.com/AliGhahraei/domestobot/actions/workflows/python-tests.yml][https://github.com/AliGhahraei/domestobot/actions/workflows/python-tests.yml/badge.svg]]
 
-[[https://static.wikia.nocookie.net/gtawiki/images/2/20/Domestobot-GTAVCS-Front.png]]
+[[https://static.wikia.nocookie.net/gtawiki/images/a/a1/Domestobot-GTAVCS-FrontQuarter.png]]
 
 ** Description
 A dynamic and configurable command line app to maintain *nix systems. It
