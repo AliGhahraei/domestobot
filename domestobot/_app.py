@@ -9,7 +9,7 @@ from pathlib import Path
 from subprocess import CompletedProcess, run
 from typing import Any, Callable, Iterable, List, Mapping, Optional, Union
 
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 from tomlkit import parse
 from tomlkit.exceptions import TOMLKitError
 from typer import Context, Option, Typer
@@ -98,7 +98,8 @@ def read_config(path: Path) -> Config:
     except TOMLKitError as e:
         raise ConfigError(f'Error while parsing config file {path}: {e}') \
             from e
-    return parse_obj_as(Config, user_config)
+    adapter = TypeAdapter(Config)
+    return adapter.validate_python(user_config)
 
 
 class ConfigError(DomestobotError):
@@ -154,7 +155,6 @@ def make_app(app_params: 'AppParams',
             select_mode(RunningMode.DRY_RUN)
 
         if ctx.invoked_subcommand is None:
-            nonlocal app
             if app_params.default_subcommands:
                 callbacks = _get_groups_and_commands_callbacks(app, ctx,
                                                                dry_run)

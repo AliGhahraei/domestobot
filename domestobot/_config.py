@@ -32,7 +32,7 @@ def _has_command_or_commands(step: 'CommandStep') -> bool:
 @dataclass
 class EnvStep(CommandStep, _EnvStepRequired):
     def __post_init__(self) -> None:
-        if not(_has_command_or_commands(self)):
+        if not (_has_command_or_commands(self)):
             raise TypeError('Exactly 1 of `command` or `commands` must be '
                             'specified and non-empty')
 
@@ -48,7 +48,7 @@ class ShellStep(CommandStep, _ShellStepRequired):
     envs: List['EnvStep'] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if not(xor(_has_command_or_commands(self), bool(self.envs))):
+        if not (xor(_has_command_or_commands(self), bool(self.envs))):
             raise TypeError('Exactly 1 of `command`, `commands` or `envs` must'
                             ' be specified and non-empty')
 

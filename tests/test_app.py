@@ -22,7 +22,7 @@ STEPS_MODULE = 'domestobot._steps'
 
 
 class Invoker(Protocol):
-    def __call__(*args: str, app: Typer) -> Result:
+    def __call__(self, *args: str, app: Typer) -> Result:
         pass
 
 
@@ -83,7 +83,7 @@ class TestMain:
         with open(toml_path, 'w') as f:
             f.write(dumps(doc))
 
-        with system_exit('value is not a valid list'):
+        with system_exit('Input should be a valid list'):
             main(toml_path)
 
     @staticmethod
