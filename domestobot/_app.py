@@ -20,9 +20,9 @@ from domestobot._config import Config
 from domestobot._core import CommandRunner, DomestobotError, warning
 from domestobot._steps import get_steps
 
-CONFIG_ROOT = xdg_config_home() / 'domestobot'
-LOG_PATH = xdg_cache_home() / 'domestobot' / 'log'
-DRY_RUN_HELP = 'Print commands for every step instead of running them'
+CONFIG_ROOT = xdg_config_home() / "domestobot"
+LOG_PATH = xdg_cache_home() / "domestobot" / "log"
+DRY_RUN_HELP = "Print commands for every step instead of running them"
 
 NamesToCallbacks = Mapping[str, Callable[..., Any]]
 
@@ -42,7 +42,7 @@ def main(config_path: Optional[Path] = None) -> None:
 
 
 def set_logger_handler() -> None:
-    if filename := getenv('DOMESTOBOT_LOG', LOG_PATH):
+    if filename := getenv("DOMESTOBOT_LOG", LOG_PATH):
         path = Path(filename)
         path.parent.mkdir(exist_ok=True)
         while logger.handlers:
@@ -54,12 +54,12 @@ def get_main_app(config_path: Optional[Path]) -> Typer:
     try:
         app = get_app(get_path_or_default(config_path))
     except ConfigNotFoundError as e:
-        warning(str(e), end='\n\n')
+        warning(str(e), end="\n\n")
         app = get_app_from_config(Config())
     except (ValidationError, DomestobotError) as e:
         sys.exit(str(e))
     except Exception as e:
-        logger.exception('')
+        logger.exception("")
         sys.exit(f'Unhandled error, please report it to the maintainer: "{e}"')
 
     return app
@@ -76,13 +76,10 @@ def get_app(config_path: Path) -> Typer:
     return current_app
 
 
-def get_app_from_config(config: Config, name: str = 'root') -> Typer:
+def get_app_from_config(config: Config, name: str = "root") -> Typer:
     runner_selector = RunnerSelector()
     commands = get_steps(config.steps, runner_selector.dynamic_mode_runner)
-    params = AppParams(name,
-                       config.help_message,
-                       commands,
-                       config.default_subcommands)
+    params = AppParams(name, config.help_message, commands, config.default_subcommands)
     return make_app(params, runner_selector.switch_mode)
 
 
@@ -96,8 +93,7 @@ def read_config(path: Path) -> Config:
     try:
         user_config = parse(contents)
     except TOMLKitError as e:
-        raise ConfigError(f'Error while parsing config file {path}: {e}') \
-            from e
+        raise ConfigError(f"Error while parsing config file {path}: {e}") from e
     adapter = TypeAdapter(Config)
     return adapter.validate_python(user_config)
 
@@ -108,7 +104,7 @@ class ConfigError(DomestobotError):
 
 class ConfigNotFoundError(ConfigError):
     def __init__(self, path: Path):
-        super().__init__(f'Config file {path} not found')
+        super().__init__(f"Config file {path} not found")
 
 
 class RunnerSelector:
@@ -123,10 +119,10 @@ class RunnerSelector:
     def dynamic_mode_runner(self) -> CommandRunner:
         class Runner:
             @staticmethod
-            def run(*args: Union[str, Path], capture_output: bool = False) \
-                    -> CompletedProcess[bytes]:
-                return self._modes[self._mode](*args,
-                                               capture_output=capture_output)
+            def run(
+                *args: Union[str, Path], capture_output: bool = False
+            ) -> CompletedProcess[bytes]:
+                return self._modes[self._mode](*args, capture_output=capture_output)
 
         return Runner()
 
@@ -134,19 +130,22 @@ class RunnerSelector:
         self._mode = mode
 
 
-def default_run(*args: Union[str, Path], capture_output: bool = False) \
-        -> CompletedProcess[bytes]:
+def default_run(
+    *args: Union[str, Path], capture_output: bool = False
+) -> CompletedProcess[bytes]:
     return run(args, check=True, capture_output=capture_output)
 
 
-def dry_run(*args: Union[str, Path], capture_output: bool = False) \
-        -> CompletedProcess[bytes]:
+def dry_run(
+    *args: Union[str, Path], capture_output: bool = False
+) -> CompletedProcess[bytes]:
     print(args)
     return CompletedProcess(args, 0)
 
 
-def make_app(app_params: 'AppParams',
-             select_mode: Callable[[RunningMode], Any]) -> Typer:
+def make_app(
+    app_params: "AppParams", select_mode: Callable[[RunningMode], Any]
+) -> Typer:
     app = Typer()
 
     @app.callback(invoke_without_command=True)
@@ -156,8 +155,7 @@ def make_app(app_params: 'AppParams',
 
         if ctx.invoked_subcommand is None:
             if app_params.default_subcommands:
-                callbacks = _get_groups_and_commands_callbacks(app, ctx,
-                                                               dry_run)
+                callbacks = _get_groups_and_commands_callbacks(app, ctx, dry_run)
                 _run_subcommands(callbacks, app_params.default_subcommands)
             else:
                 print(ctx.get_help())
@@ -170,16 +168,19 @@ def make_app(app_params: 'AppParams',
     return app
 
 
-def _get_groups_and_commands_callbacks(app: Typer, *sub_groups_args: Any) \
-        -> NamesToCallbacks:
+def _get_groups_and_commands_callbacks(
+    app: Typer, *sub_groups_args: Any
+) -> NamesToCallbacks:
     """Get registered callbacks partially applying sub_groups_args to groups.
 
     Maybe Typer provides some API to do this automatically, but probably not
     because Click discourages calling commands from other commands:
     https://click.palletsprojects.com/en/6.x/advanced/#invoking-other-commands
     """
-    return {**get_groups_callbacks(app, *sub_groups_args),
-            **get_commands_callbacks(app)}
+    return {
+        **get_groups_callbacks(app, *sub_groups_args),
+        **get_commands_callbacks(app),
+    }
 
 
 def get_groups_callbacks(app: Typer, *args: Any) -> NamesToCallbacks:
@@ -188,10 +189,16 @@ def get_groups_callbacks(app: Typer, *args: Any) -> NamesToCallbacks:
     Search through every typer_instance from registered_groups, get their
     registered callbacks and partially apply `args` to them.
     """
-    sub_instances = (instance for group in app.registered_groups
-                     if (instance := group.typer_instance))
-    sub_typer_infos = (typer_info for instance in sub_instances
-                       if (typer_info := instance.registered_callback))
+    sub_instances = (
+        instance
+        for group in app.registered_groups
+        if (instance := group.typer_instance)
+    )
+    sub_typer_infos = (
+        typer_info
+        for instance in sub_instances
+        if (typer_info := instance.registered_callback)
+    )
     return _get_names_to_callbacks(sub_typer_infos, *args)
 
 
@@ -203,22 +210,25 @@ def get_commands_callbacks(app: Typer, *args: Any) -> NamesToCallbacks:
     return _get_names_to_callbacks(app.registered_commands, *args)
 
 
-def _get_names_to_callbacks(iterable: Iterable[Union[TyperInfo, CommandInfo]],
-                            *args: Any) -> NamesToCallbacks:
-    return {callback.__name__: partial(callback, *args) for item in iterable
-            if (callback := item.callback)}
+def _get_names_to_callbacks(
+    iterable: Iterable[Union[TyperInfo, CommandInfo]], *args: Any
+) -> NamesToCallbacks:
+    return {
+        callback.__name__: partial(callback, *args)
+        for item in iterable
+        if (callback := item.callback)
+    }
 
 
-def _run_subcommands(callbacks: NamesToCallbacks, subcommands: List[str]) \
-        -> None:
-    found_callbacks = [_search_callbacks(subcommand, callbacks)
-                       for subcommand in subcommands]
+def _run_subcommands(callbacks: NamesToCallbacks, subcommands: List[str]) -> None:
+    found_callbacks = [
+        _search_callbacks(subcommand, callbacks) for subcommand in subcommands
+    ]
     for callback in found_callbacks:
         callback()
 
 
-def _search_callbacks(name: str, callbacks: NamesToCallbacks) \
-        -> Callable[[], Any]:
+def _search_callbacks(name: str, callbacks: NamesToCallbacks) -> Callable[[], Any]:
     try:
         callback = callbacks[name]
     except KeyError as e:
@@ -240,9 +250,9 @@ def get_path_or_default(path: Optional[Path]) -> Path:
 
 def get_root_dir() -> Path:
     """Get envvar `DOMESTOBOT_ROOT` or default path."""
-    return Path(getenv('DOMESTOBOT_ROOT', CONFIG_ROOT))
+    return Path(getenv("DOMESTOBOT_ROOT", CONFIG_ROOT))
 
 
 def get_root_path() -> Path:
     """Get configured root config file path."""
-    return get_root_dir() / 'root.toml'
+    return get_root_dir() / "root.toml"
