@@ -1,4 +1,0 @@
--c requirements.txt
-mypy
-types-pkg-resources
-types-click
