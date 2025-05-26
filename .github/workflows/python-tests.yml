@@ -4,12 +4,12 @@ on: [push, pull_request]
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: "actions/setup-python@v2"
-      with:
-        python-version: "3.9"
-    - run: pip install -r requirements/toolchain_requirements.txt
-    - run: nox
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2025.5.8
+      - run: mise ci

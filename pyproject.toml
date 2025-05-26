@@ -1,6 +1,6 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 
 [project]
@@ -17,12 +17,12 @@ classifiers = [
     "Operating System :: MacOS",
     "Operating System :: Unix",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.9,<4.0"
 dependencies = [
-    "typer[all]",
-    "tomlkit",
-    "pydantic",
-    "xdg",
+  "typer (>=0.15.4,<0.16.0)", 
+  "tomlkit (>=0.13.2,<0.14.0)", 
+  "pydantic (>=2.11.5,<3.0.0)", 
+  "xdg (>=6.0.0,<7.0.0)"
 ]
 
   [project.scripts]
@@ -30,6 +30,14 @@ dependencies = [
 
   [project.urls]
   Home = "https://github.com/AliGhahraei/domestobot"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+coverage = "^7.8.2"
+mypy = "^1.15.0"
+types-click = "^7.1.8"
+ruff = "^0.11.11"
 
 
 [tool.coverage]
@@ -50,7 +58,7 @@ dependencies = [
 
 
 [tool.mypy]
-files = ['domestobot', 'tests', '*.py']
+files = ['domestobot', 'tests']
 strict = true
 plugins = [
     "pydantic.mypy",
@@ -79,6 +87,7 @@ plugins = [
   [[tool.mypy.overrides]]
   module = 'tomlkit.*'
   no_implicit_reexport = false
+
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

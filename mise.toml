@@ -1,2 +1,50 @@
+[vars]
+run_prefix = 'poetry run'
+
+ruff_prefix = '{{vars.run_prefix}} ruff'
+coverage_prefix = "{{vars.run_prefix}} coverage"
+
+lint_prefix = '{{vars.ruff_prefix}} check'
+format_prefix = '{{vars.ruff_prefix}} format'
+
+[tasks]
+check_lint = '{{vars.lint_prefix}}'
+fix_lint = '{{vars.lint_prefix}} --fix'
+
+check_format = '{{vars.format_prefix}} --check'
+fix_format = '{{vars.format_prefix}}'
+
+check_typing = '{{vars.run_prefix}} mypy'
+
+basic_setup = "poetry install"
+
+local_ci = 'act'
+
+[tasks.setup]
+depends = 'basic_setup'
+run = "mise generate git-pre-commit --hook pre-push -t check -w "
+
+[tasks.fix]
+depends = ['fix_lint', 'fix_format']
+
+[tasks.test]
+run = [
+  "{{vars.coverage_prefix}} run -m pytest",
+  "{{vars.coverage_prefix}} report"
+]
+
+[tasks.check]
+depends = ['check_lint', 'check_typing', 'check_format', 'test']
+
+[tasks.prepare]
+depends = ['fix']
+run = 'mise check' # Adding to depends could make it run before setup finishes
+
+[tasks.ci]
+depends = ['basic_setup']
+run = 'mise check' # Adding to depends could make it run before setup finishes
+
 [tools]
+act = "latest"
+poetry = "latest"
 python = "3.9"
