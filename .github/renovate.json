@@ -9,6 +9,7 @@
       "automerge": true
     },
     {
+      "matchFileNames": ["**"],
       "rangeStrategy": "bump"
     }
   ]
