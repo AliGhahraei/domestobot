@@ -6,8 +6,7 @@ build-backend = "poetry.core.masonry.api"
 [project]
 name = "domestobot"
 version = "0.1.2"
-description = "Your own trusty housekeeper"
-readme = {text = "https://github.com/AliGhahraei/domestobot", content-type="text/plain"}
+description = "Your own trusty housekeeper: https://github.com/AliGhahraei/domestobot"
 authors = [{name = "Ali Ghahraei Figueroa", email = "aligf94@gmail.com"}]
 license = {file = "LICENSE"}
 classifiers = [
