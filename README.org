@@ -51,28 +51,17 @@ with add_typer to include them in a bigger application. You could look at
 [[https://github.com/AliGhahraei/typer-scripts/][typer-scripts]] to see how I do it.
 
 ** Development
-To get a working environment, install the toolchain requiremenrs inside a
-virtual environment:
-
+To get a working environment, install [[https://mise.jdx.dev/][mise]] and run:
 #+begin_src shell
-pip install -r requirements/toolchain_requirements.txt
+mise setup
 #+end_src
 
-then install development requirements using [[https://pydoit.org/][doit]]:
-
+Then check out available tasks using:
 #+begin_src shell
-doit sync
+mise tasks ls
 #+end_src
 
-Doit can also sort import statements, update requirements, etc. You can see
-available commands with =doit list=.
-
-
-To run a local build (including unit tests), run [[https://nox.thea.codes/en/stable/][nox]] inside the project
-directory:
-
+To run a local build, run:
 #+begin_src shell
-nox
+mise local_ci
 #+end_src
-
-This same command is run by Github Actions for every pushed commit.
