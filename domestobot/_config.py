@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import field
 from operator import xor
-from typing import List, Optional, cast
+from typing import cast
 
 from pydantic import FilePath
 from pydantic.dataclasses import dataclass
@@ -15,9 +15,9 @@ particular step.
 
 @dataclass
 class CommandStep:
-    title: Optional[str] = None
-    command: List[str] = field(default_factory=list)
-    commands: List[List[str]] = field(default_factory=list)
+    title: str | None = None
+    command: list[str] = field(default_factory=list)
+    commands: list[list[str]] = field(default_factory=list)
 
 
 @dataclass
@@ -46,7 +46,7 @@ class _ShellStepRequired:
 
 @dataclass
 class ShellStep(CommandStep, _ShellStepRequired):
-    envs: List["EnvStep"] = field(default_factory=list)
+    envs: list["EnvStep"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if not (xor(_has_command_or_commands(self), bool(self.envs))):
@@ -58,7 +58,7 @@ class ShellStep(CommandStep, _ShellStepRequired):
 
 @dataclass
 class Config:
-    default_subcommands: List[str] = field(default_factory=list)
-    steps: List["ShellStep"] = field(default_factory=list)
+    default_subcommands: list[str] = field(default_factory=list)
+    steps: list["ShellStep"] = field(default_factory=list)
     help_message: str = HELP
-    sub_domestobots: List[FilePath] = field(default_factory=list)
+    sub_domestobots: list[FilePath] = field(default_factory=list)
