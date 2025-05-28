@@ -28,7 +28,7 @@ class TestShellStep:
             )
 
     @staticmethod
-    def test_step_raises_exception_without_command_or_commands_or_env(
+    def test_step_raises_exception_without_command_fields_or_env(
         runner: Mock,
     ) -> None:
         with raises(TypeError):
@@ -37,13 +37,33 @@ class TestShellStep:
 
 class TestEnvStep:
     @staticmethod
-    def test_step_raises_exception_with_command_and_commands_together(
-        runner: Mock,
-    ) -> None:
+    def test_step_raises_exception_with_command_and_commands_together() -> None:
         with raises(TypeError):
             EnvStep("Linux", "title", ["command1"], [["command2"], ["command3"]])
 
     @staticmethod
-    def test_step_raises_exception_without_command_or_commands(runner: Mock) -> None:
+    def test_step_raises_exception_with_shell_command_and_shell_commands_together() -> (
+        None
+    ):
+        with raises(TypeError):
+            EnvStep(
+                "Linux",
+                "title",
+                shell_command="command1",
+                shell_commands=["command2", "command3"],
+            )
+
+    @staticmethod
+    def test_step_raises_exception_with_command_and_shell_command_together() -> None:
+        with raises(TypeError):
+            EnvStep(
+                "Linux",
+                "title",
+                ["command1"],
+                shell_command="command2",
+            )
+
+    @staticmethod
+    def test_step_raises_exception_without_command_fields() -> None:
         with raises(TypeError):
             EnvStep("Linux", "title")

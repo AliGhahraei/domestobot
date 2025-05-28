@@ -34,9 +34,16 @@ def _make_command_step_wrapper(
         if step.title:
             title(step.title)
 
-        commands = step.commands if step.commands else [step.command]
-        for command in commands:
-            runner.run(*command)
+        if step.command:
+            _ = runner.run(*step.command)
+        elif step.commands:
+            for runner_args in step.commands:
+                _ = runner.run(*runner_args)
+        elif step.shell_command:
+            _ = runner.run(step.shell_command, shell=True)
+        else:
+            for shell_runner_args in step.shell_commands:
+                _ = runner.run(shell_runner_args, shell=True)
 
     step_wrapper.__name__ = name
     step_wrapper.__doc__ = doc

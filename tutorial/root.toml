@@ -11,6 +11,8 @@ default_subcommands = [                    # Optional subcommands to run if
     'greet_user',                          # invoked as `domestobot`. Help is
     'greet_twice',                         # shown if this field is not set.
     'echo_platform',
+    'greet_with_shell',
+    'greet_twice_with_shell',
     'sub_config'
 ]
 
@@ -60,3 +62,23 @@ command = ['echo', "You're using Linux"]
 os = 'Darwin'
 title = 'Running echo on Darwin'
 command = ['echo', "You're using Darwin"]
+
+
+# You can also use `shell_command` to run a command directly in the shell.
+# This is useful for commands that require shell features like pipes or wildcards.
+[[steps]]
+name = 'greet_with_shell'
+doc = "Demo a simple step using `shell_command`."
+title = 'Running `echo Hello from shell!`'
+shell_command = 'echo "Hello from shell!"'
+
+
+# Similar to `commands`, you can use `shell_commands` for multiple shell commands.
+[[steps]]
+name = 'greet_twice_with_shell'
+doc = "Demo multiple shell commands in a step."
+title = 'Running echo twice via shell'
+shell_commands = [
+    'echo "First"',
+    'echo "Second"',
+]

@@ -217,7 +217,7 @@ class TestGetAppFromConfig:
         ) -> None:
             result = invoke("--dry-run", "test-step", app=get_app_from_config(config))
 
-            assert f"('echo', '{step_output}')" in result.stdout
+            assert f"{{cmd:('echo', '{step_output}')}}" in result.stdout
 
         @staticmethod
         def test_app_callback_works_the_same_as_normal_function(
@@ -233,6 +233,27 @@ class TestGetAppFromConfig:
             f(ctx)  # type: ignore[misc]
 
             assert f"{step_output}\n" == capfd.readouterr().out
+
+    class TestSingleShellStepWithDefaultSubcommands:
+        @staticmethod
+        @fixture
+        def step() -> ShellStep:
+            return ShellStep("test_step", "doc", shell_command="echo hi")
+
+        @staticmethod
+        @fixture
+        def config(step: ShellStep) -> Config:
+            return Config([step.name], [step])
+
+        @staticmethod
+        def test_app_prints_shell_commands_with_dry_run(
+            invoke: Invoker,
+            config: Config,
+            step_output: str,
+        ) -> None:
+            result = invoke("--dry-run", "test-step", app=get_app_from_config(config))
+
+            assert "{shell_cmd:('echo hi',)}" in result.stdout
 
     class TestMultipleSteps:
         @staticmethod
@@ -347,7 +368,16 @@ class TestGetApp:
         assert (
             capfd.readouterr().out
             == "\n".join(
-                ["Hello!", "First echo", "Second echo", "You're using Linux", "Bye!"]
+                [
+                    "Hello!",
+                    "First echo",
+                    "Second echo",
+                    "You're using Linux",
+                    "Hello from shell!",
+                    "First",
+                    "Second",
+                    "Bye!",
+                ]
             )
             + "\n"
         )

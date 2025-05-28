@@ -120,9 +120,13 @@ class RunnerSelector:
         class Runner:
             @staticmethod
             def run(
-                *args: Union[str, Path], capture_output: bool = False
+                *args: Union[str, Path],
+                capture_output: bool = False,
+                shell: bool = False,
             ) -> CompletedProcess[bytes]:
-                return self._modes[self._mode](*args, capture_output=capture_output)
+                return self._modes[self._mode](
+                    *args, capture_output=capture_output, shell=shell
+                )
 
         return Runner()
 
@@ -131,15 +135,15 @@ class RunnerSelector:
 
 
 def default_run(
-    *args: Union[str, Path], capture_output: bool = False
+    *args: Union[str, Path], capture_output: bool = False, shell: bool = False
 ) -> CompletedProcess[bytes]:
-    return run(args, check=True, capture_output=capture_output)
+    return run(args, check=True, capture_output=capture_output, shell=shell)
 
 
 def dry_run(
-    *args: Union[str, Path], capture_output: bool = False
+    *args: Union[str, Path], capture_output: bool = False, shell: bool = False
 ) -> CompletedProcess[bytes]:
-    print(args)
+    print(f"{{{'shell_cmd' if shell else 'cmd'}:{args}}}")
     return CompletedProcess(args, 0)
 
 

@@ -10,6 +10,7 @@ from domestobot._steps import get_steps
 
 MODULE_UNDER_TEST = "domestobot._steps"
 LINUX = "Linux"
+DARWIN = "Darwin"
 
 
 def assert_metadata_equal(function: Callable[..., Any], name: str, doc: str) -> None:
@@ -84,6 +85,31 @@ class TestGetSteps:
             runner.run.assert_any_call("command1")
             runner.run.assert_any_call("command2")
 
+        @staticmethod
+        def test_shell_definition_passes_shell_command_to_runner(
+            runner: Mock,
+        ) -> None:
+            step = ShellStep("name", "doc", shell_command="echo hello")
+
+            function = get_steps([step], runner)[0]
+            function()
+
+            runner.run.assert_called_once_with("echo hello", shell=True)
+
+        @staticmethod
+        def test_shell_definition_with_multiple_shell_commands_passes_them_to_runner(
+            runner: Mock,
+        ) -> None:
+            step = ShellStep(
+                "name", "doc", "title", shell_commands=["echo hello", "ls"]
+            )
+
+            function = get_steps([step], runner)[0]
+            function()
+
+            runner.run.assert_any_call("echo hello", shell=True)
+            runner.run.assert_any_call("ls", shell=True)
+
     class TestEnvDefinition:
         @staticmethod
         def test_get_steps_creates_env_definition_with_correct_metadata(
@@ -114,7 +140,7 @@ class TestGetSteps:
                 "doc",
                 envs=[
                     EnvStep(LINUX, "title", ["command"]),
-                    EnvStep("Darwin", "title", ["ignored_command"]),
+                    EnvStep(DARWIN, "title", ["ignored_command"]),
                 ],
             )
 
@@ -143,3 +169,50 @@ class TestGetSteps:
             function()
 
             assert_stdout("title", capsys)
+
+        @staticmethod
+        @patch(f"{MODULE_UNDER_TEST}.system", return_value=LINUX)
+        def test_env_definition_passes_matching_platform_shell_command_to_runner(
+            _: Mock, runner: Mock
+        ) -> None:
+            step = ShellStep(
+                "name",
+                "doc",
+                envs=[
+                    EnvStep(LINUX, "title", shell_command="echo 'hello linux'"),
+                    EnvStep(DARWIN, "title", shell_command="echo 'hello darwin'"),
+                ],
+            )
+
+            function = get_steps([step], runner)[0]
+            function()
+
+            runner.run.assert_called_once_with("echo 'hello linux'", shell=True)
+
+        @staticmethod
+        @patch(f"{MODULE_UNDER_TEST}.system", return_value=DARWIN)
+        def test_env_definition_passes_matching_platform_shell_commands_to_runner(
+            _: Mock, runner: Mock
+        ) -> None:
+            step = ShellStep(
+                "name",
+                "doc",
+                envs=[
+                    EnvStep(
+                        LINUX,
+                        "title",
+                        shell_commands=["echo 'hello linux'", "ls"],
+                    ),
+                    EnvStep(
+                        DARWIN,
+                        "title",
+                        shell_commands=["echo 'hello darwin'", "pwd"],
+                    ),
+                ],
+            )
+
+            function = get_steps([step], runner)[0]
+            function()
+
+            runner.run.assert_any_call("echo 'hello darwin'", shell=True)
+            runner.run.assert_any_call("pwd", shell=True)

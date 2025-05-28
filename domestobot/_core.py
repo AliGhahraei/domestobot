@@ -20,7 +20,7 @@ def warning(message: str, **kwargs: Any) -> None:
 class CommandRunner(Protocol):
     @abstractmethod
     def run(
-        self, *args: Union[str, Path], capture_output: bool = False
+        self, *args: Union[str, Path], capture_output: bool = False, shell: bool = False
     ) -> CompletedProcess[bytes]:
         pass
 
