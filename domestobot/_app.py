@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 from dataclasses import dataclass
-from enum import Enum, auto
 from functools import partial
 from logging import FileHandler, getLogger
 from os import getenv
@@ -12,28 +11,27 @@ from typing import Any, Callable, Iterable, List, Mapping, Optional, Union
 from pydantic import TypeAdapter, ValidationError
 from tomlkit import parse
 from tomlkit.exceptions import TOMLKitError
-from typer import Context, Option, Typer
+from typer import Context, Typer
 from typer.models import CommandInfo, TyperInfo
 from xdg import xdg_cache_home, xdg_config_home
 
 from domestobot._config import Config
-from domestobot._core import CommandRunner, DomestobotError, warning
+from domestobot._core import (
+    CommandRunner,
+    DomestobotError,
+    RunningMode,
+    dry_run_option,
+    warning,
+)
 from domestobot._steps import get_steps
 
 CONFIG_ROOT = xdg_config_home() / "domestobot"
 LOG_PATH = xdg_cache_home() / "domestobot" / "log"
-DRY_RUN_HELP = "Print commands for every step instead of running them"
 
 NamesToCallbacks = Mapping[str, Callable[..., Any]]
 
 
-dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
 logger = getLogger(__name__)
-
-
-class RunningMode(Enum):
-    DEFAULT = auto()
-    DRY_RUN = auto()
 
 
 def main(config_path: Optional[Path] = None) -> None:

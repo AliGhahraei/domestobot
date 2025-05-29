@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from domestobot._app import (
-    dry_run_option,
     get_app,
     get_commands_callbacks,
     get_groups_callbacks,

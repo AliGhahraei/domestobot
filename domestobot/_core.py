@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 import sys
 from abc import abstractmethod
+from enum import Enum, auto
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Any, Protocol, Union
 
-from typer import style
+from typer import Option, style
+
+DRY_RUN_HELP = "Print commands for every step instead of running them"
+dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
+
+
+class RunningMode(Enum):
+    DEFAULT = auto()
+    DRY_RUN = auto()
 
 
 def title(message: str) -> None:
