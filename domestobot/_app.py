@@ -17,7 +17,7 @@ from xdg import xdg_cache_home, xdg_config_home
 
 from domestobot._config import Config
 from domestobot._core import (
-    CommandRunner,
+    CmdRunner,
     DomestobotError,
     RunningMode,
     dry_run_option,
@@ -114,7 +114,7 @@ class RunnerSelector:
         }
 
     @property
-    def dynamic_mode_runner(self) -> CommandRunner:
+    def dynamic_mode_runner(self) -> CmdRunner:
         class Runner:
             @staticmethod
             def run(

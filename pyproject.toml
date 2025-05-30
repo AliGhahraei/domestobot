@@ -50,6 +50,7 @@ ruff = "^0.11.11"
   exclude_lines = [
       'pragma: no cover',
       'pass',
+      '...',
       'if TYPE_CHECKING.*',
   ]
   fail_under = 100
