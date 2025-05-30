@@ -5,7 +5,7 @@ from functools import partial
 from logging import FileHandler, getLogger
 from os import getenv
 from pathlib import Path
-from subprocess import CompletedProcess, run
+from subprocess import CompletedProcess
 from typing import Annotated, Any, Callable, Iterable, List, Mapping, Optional, Union
 
 from pydantic import TypeAdapter, ValidationError
@@ -18,7 +18,9 @@ from xdg import xdg_cache_home, xdg_config_home
 from domestobot._config import Config
 from domestobot._core import (
     CmdRunner,
+    DefaultRunner,
     DomestobotError,
+    DryRunner,
     RunningMode,
     dry_run_option,
     warning,
@@ -108,9 +110,9 @@ class ConfigNotFoundError(ConfigError):
 class RunnerSelector:
     def __init__(self) -> None:
         self._mode = RunningMode.DEFAULT
-        self._modes = {
-            RunningMode.DEFAULT: default_run,
-            RunningMode.DRY_RUN: dry_run,
+        self._modes: dict[RunningMode, CmdRunner] = {
+            RunningMode.DEFAULT: DefaultRunner(),
+            RunningMode.DRY_RUN: DryRunner(),
         }
 
     @property
@@ -128,19 +130,6 @@ class RunnerSelector:
 
     def switch_mode(self, mode: RunningMode) -> None:
         self._mode = mode
-
-
-def default_run(
-    *args: Union[str, Path], capture_output: bool = False, shell: bool = False
-) -> CompletedProcess[bytes]:
-    return run(args, check=True, capture_output=capture_output, shell=shell)
-
-
-def dry_run(
-    *args: Union[str, Path], capture_output: bool = False, shell: bool = False
-) -> CompletedProcess[bytes]:
-    print(f"{{{'shell_cmd' if shell else 'cmd'}:{args}}}")
-    return CompletedProcess(args, 0)
 
 
 def make_app(

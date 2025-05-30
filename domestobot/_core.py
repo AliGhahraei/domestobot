@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import subprocess
 from enum import Enum, auto
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -33,6 +34,27 @@ def title(message: str) -> None:
 
 def warning(message: str, **kwargs: Any) -> None:
     err_console.print(message, style="yellow", **kwargs)
+
+
+class DryRunner:
+    mode: RunningMode = RunningMode.DRY_RUN
+
+    def __call__(
+        self, *args: str | Path, capture_output: bool = False, shell: bool = False
+    ) -> CompletedProcess[bytes]:
+        print(f"{{{'shell_cmd' if shell else 'cmd'}:{args}}}")
+        return CompletedProcess(args, 0, str(args).encode())
+
+
+class DefaultRunner:
+    mode: RunningMode = RunningMode.DEFAULT
+
+    def __call__(
+        self, *args: str | Path, capture_output: bool = False, shell: bool = False
+    ) -> CompletedProcess[bytes]:
+        return subprocess.run(
+            args, check=True, capture_output=capture_output, shell=shell
+        )
 
 
 class DomestobotError(Exception):
