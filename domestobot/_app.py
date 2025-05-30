@@ -70,7 +70,7 @@ def get_app(config_path: Path) -> Typer:
     current_app = get_app_from_config(current_config, current_name)
     for sub_domestobot_path in current_config.sub_domestobots:
         sub_app = get_app(sub_domestobot_path)
-        current_app.add_typer(sub_app)
+        current_app.add_typer(sub_app, name=current_name)
     return current_app
 
 
