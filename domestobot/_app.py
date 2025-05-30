@@ -52,7 +52,7 @@ def get_main_app(config_path: Optional[Path]) -> Typer:
     try:
         app = get_app(get_path_or_default(config_path))
     except ConfigNotFoundError as e:
-        warning(str(e), end="\n\n")
+        warning(str(e))
         app = get_app_from_config(Config())
     except (ValidationError, DomestobotError) as e:
         sys.exit(str(e))

@@ -154,7 +154,9 @@ class TestGetMainApp:
         result = invoke(app=get_main_app(path))
 
         assert "Usage:" in result.stdout
-        assert f"Config file {path} not found" in capsys.readouterr().err
+        err = capsys.readouterr().err
+        for part in "Config file", str(path), "not found":
+            assert part in err
 
 
 class TestGetAppFromConfig:

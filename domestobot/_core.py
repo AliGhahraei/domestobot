@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-import sys
 from enum import Enum, auto
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Any, Protocol
 
-from typer import Option, style
+from rich.console import Console
+from typer import Option
+
+console = Console()
+err_console = Console(stderr=True)
+
 
 DRY_RUN_HELP = "Print commands for every step instead of running them"
 dry_run_option = Option(help=DRY_RUN_HELP, show_default=False)
@@ -24,11 +28,11 @@ class CmdRunner(Protocol):
 
 def title(message: str) -> None:
     dotted_message = f"\n{message}..."
-    print(style(dotted_message, "magenta", bold=True))
+    console.print(dotted_message, style="bold magenta")
 
 
 def warning(message: str, **kwargs: Any) -> None:
-    print(style(message, "yellow"), **kwargs, file=sys.stderr)
+    err_console.print(message, style="yellow", **kwargs)
 
 
 class DomestobotError(Exception):
