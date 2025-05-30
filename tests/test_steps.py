@@ -45,7 +45,7 @@ class TestGetSteps:
             function = get_steps([step], runner)[0]
             function()
 
-            runner.run.assert_called_once_with("command", "param")
+            runner.assert_called_once_with("command", "param")
 
         @staticmethod
         def test_shell_definition_without_title_has_no_output(
@@ -82,8 +82,8 @@ class TestGetSteps:
             function = get_steps([step], runner)[0]
             function()
 
-            runner.run.assert_any_call("command1")
-            runner.run.assert_any_call("command2")
+            runner.assert_any_call("command1")
+            runner.assert_any_call("command2")
 
         @staticmethod
         def test_shell_definition_passes_shell_command_to_runner(
@@ -94,7 +94,7 @@ class TestGetSteps:
             function = get_steps([step], runner)[0]
             function()
 
-            runner.run.assert_called_once_with("echo hello", shell=True)
+            runner.assert_called_once_with("echo hello", shell=True)
 
         @staticmethod
         def test_shell_definition_with_multiple_shell_commands_passes_them_to_runner(
@@ -107,8 +107,8 @@ class TestGetSteps:
             function = get_steps([step], runner)[0]
             function()
 
-            runner.run.assert_any_call("echo hello", shell=True)
-            runner.run.assert_any_call("ls", shell=True)
+            runner.assert_any_call("echo hello", shell=True)
+            runner.assert_any_call("ls", shell=True)
 
     class TestEnvDefinition:
         @staticmethod
@@ -147,7 +147,7 @@ class TestGetSteps:
             function = get_steps([step], runner)[0]
             function()
 
-            runner.run.assert_called_once_with("command")
+            runner.assert_called_once_with("command")
 
         @staticmethod
         @patch(f"{MODULE_UNDER_TEST}.system", return_value=LINUX)
@@ -187,7 +187,7 @@ class TestGetSteps:
             function = get_steps([step], runner)[0]
             function()
 
-            runner.run.assert_called_once_with("echo 'hello linux'", shell=True)
+            runner.assert_called_once_with("echo 'hello linux'", shell=True)
 
         @staticmethod
         @patch(f"{MODULE_UNDER_TEST}.system", return_value=DARWIN)
@@ -214,5 +214,5 @@ class TestGetSteps:
             function = get_steps([step], runner)[0]
             function()
 
-            runner.run.assert_any_call("echo 'hello darwin'", shell=True)
-            runner.run.assert_any_call("pwd", shell=True)
+            runner.assert_any_call("echo 'hello darwin'", shell=True)
+            runner.assert_any_call("pwd", shell=True)

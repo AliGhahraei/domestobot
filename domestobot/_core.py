@@ -21,7 +21,7 @@ class RunningMode(Enum):
 
 
 class CmdRunner(Protocol):
-    def run(
+    def __call__(
         self, *args: str | Path, capture_output: bool = False, shell: bool = False
     ) -> CompletedProcess[bytes]: ...
 

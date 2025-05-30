@@ -115,18 +115,16 @@ class RunnerSelector:
 
     @property
     def dynamic_mode_runner(self) -> CmdRunner:
-        class Runner:
-            @staticmethod
-            def run(
-                *args: Union[str, Path],
-                capture_output: bool = False,
-                shell: bool = False,
-            ) -> CompletedProcess[bytes]:
-                return self._modes[self._mode](
-                    *args, capture_output=capture_output, shell=shell
-                )
+        def runner(
+            *args: Union[str, Path],
+            capture_output: bool = False,
+            shell: bool = False,
+        ) -> CompletedProcess[bytes]:
+            return self._modes[self._mode](
+                *args, capture_output=capture_output, shell=shell
+            )
 
-        return Runner()
+        return runner
 
     def switch_mode(self, mode: RunningMode) -> None:
         self._mode = mode
