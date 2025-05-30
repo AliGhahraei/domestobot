@@ -9,7 +9,7 @@ from typing import Any, Protocol, Union
 from typer import Option, style
 
 DRY_RUN_HELP = "Print commands for every step instead of running them"
-dry_run_option = Option(False, help=DRY_RUN_HELP, show_default=False)
+dry_run_option = Option(help=DRY_RUN_HELP, show_default=False)
 
 
 class RunningMode(Enum):

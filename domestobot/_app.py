@@ -6,7 +6,7 @@ from logging import FileHandler, getLogger
 from os import getenv
 from pathlib import Path
 from subprocess import CompletedProcess, run
-from typing import Any, Callable, Iterable, List, Mapping, Optional, Union
+from typing import Annotated, Any, Callable, Iterable, List, Mapping, Optional, Union
 
 from pydantic import TypeAdapter, ValidationError
 from tomlkit import parse
@@ -151,7 +151,9 @@ def make_app(
     app = Typer()
 
     @app.callback(invoke_without_command=True)
-    def main(ctx: Context, dry_run: Optional[bool] = dry_run_option) -> None:
+    def main(
+        ctx: Context, dry_run: Annotated[Optional[bool], dry_run_option] = False
+    ) -> None:
         if dry_run is True:  # https://github.com/tiangolo/typer/issues/279
             select_mode(RunningMode.DRY_RUN)
 
