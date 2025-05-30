@@ -29,7 +29,6 @@ class TestCmdRunnerContext:
         _ = ctx("a")
 
         default_runner.assert_called_with("a", capture_output=False, shell=False)
-        assert ctx.mode == RunningMode.DEFAULT
 
     @staticmethod
     def test_runner_forwards_args() -> None:
@@ -49,7 +48,6 @@ class TestCmdRunnerContext:
         _ = ctx("a")
 
         dry_runner.assert_called_with("a", capture_output=False, shell=False)
-        assert ctx.mode == RunningMode.DRY_RUN
 
 
 class TestSetObjToRunningModeIfUnset:

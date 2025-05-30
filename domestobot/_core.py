@@ -43,7 +43,6 @@ def error(message: str) -> None:
 
 
 class CmdRunnerContext(Context, CmdRunner):
-    mode: RunningMode = RunningMode.DEFAULT
     dry_runner: CmdRunner
     default_runner: CmdRunner
 
@@ -62,10 +61,8 @@ class CmdRunnerContext(Context, CmdRunner):
     def __call__(
         self, *args: str | Path, capture_output: bool = False, shell: bool = False
     ) -> CompletedProcess[bytes]:
-        self.mode = self.find_object(RunningMode) or self.mode
-        runner = (
-            self.dry_runner if self.mode is RunningMode.DRY_RUN else self.default_runner
-        )
+        mode = self.find_object(RunningMode) or RunningMode.DEFAULT
+        runner = self.dry_runner if mode is RunningMode.DRY_RUN else self.default_runner
         return runner(*args, capture_output=capture_output, shell=shell)
 
 
@@ -86,8 +83,6 @@ class RunnerCommand(TyperCommand):
 
 
 class DryRunner:
-    mode: RunningMode = RunningMode.DRY_RUN
-
     def __call__(
         self, *args: str | Path, capture_output: bool = False, shell: bool = False
     ) -> CompletedProcess[bytes]:
@@ -96,8 +91,6 @@ class DryRunner:
 
 
 class DefaultRunner:
-    mode: RunningMode = RunningMode.DEFAULT
-
     def __call__(
         self, *args: str | Path, capture_output: bool = False, shell: bool = False
     ) -> CompletedProcess[bytes]:
