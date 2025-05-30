@@ -10,6 +10,7 @@ from pytest import CaptureFixture, LogCaptureFixture, MonkeyPatch, fixture, mark
 from tomlkit import document, dumps
 from typer import Typer
 from typer.testing import CliRunner
+from xdg import xdg_config_home
 
 from domestobot._app import (
     ConfigError,
@@ -386,7 +387,7 @@ class TestGetApp:
 class TestGetPathOrDefault:
     @staticmethod
     def test_default_path_is_correct() -> None:
-        assert get_path_or_default(None) == Path.home() / ".config/domestobot/root.toml"
+        assert get_path_or_default(None) == xdg_config_home() / "domestobot/root.toml"
 
     @staticmethod
     def test_path_can_be_read_from_env(monkeypatch: MonkeyPatch) -> None:
