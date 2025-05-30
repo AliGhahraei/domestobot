@@ -5,8 +5,10 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Any, Protocol, override
 
+from click import Context as ClickContext
 from rich.console import Console
 from typer import Context, Exit, Option
+from typer.core import TyperCommand, TyperGroup
 
 console = Console()
 err_console = Console(stderr=True)
@@ -64,7 +66,7 @@ class CmdRunnerContext(Context, CmdRunner):
         runner = (
             self.dry_runner if self.mode is RunningMode.DRY_RUN else self.default_runner
         )
-        return runner(*args, capture_output=capture_output)
+        return runner(*args, capture_output=capture_output, shell=shell)
 
 
 def set_obj_to_running_mode_if_unset(ctx: Context, *, dry_run: bool) -> None:
@@ -73,6 +75,14 @@ def set_obj_to_running_mode_if_unset(ctx: Context, *, dry_run: bool) -> None:
             error("Cannot set dry-run more than once")
             raise Exit(1)
         ctx.obj = RunningMode.DRY_RUN
+
+
+class RunnerGroup(TyperGroup):
+    context_class: type[ClickContext] = CmdRunnerContext
+
+
+class RunnerCommand(TyperCommand):
+    context_class: type[ClickContext] = CmdRunnerContext
 
 
 class DryRunner:

@@ -28,8 +28,17 @@ class TestCmdRunnerContext:
 
         _ = ctx("a")
 
-        default_runner.assert_called_with("a", capture_output=False)
+        default_runner.assert_called_with("a", capture_output=False, shell=False)
         assert ctx.mode == RunningMode.DEFAULT
+
+    @staticmethod
+    def test_runner_forwards_args() -> None:
+        default_runner = Mock(spec_set=CmdRunner)
+        ctx = CmdRunnerContext(Mock(), default_runner=default_runner)
+
+        _ = ctx("a", capture_output=True, shell=True)
+
+        default_runner.assert_called_with("a", capture_output=True, shell=True)
 
     @staticmethod
     def test_runner_runs_in_dry_run_mode() -> None:
@@ -39,7 +48,7 @@ class TestCmdRunnerContext:
         ctx.obj = RunningMode.DRY_RUN
         _ = ctx("a")
 
-        dry_runner.assert_called_with("a", capture_output=False)
+        dry_runner.assert_called_with("a", capture_output=False, shell=False)
         assert ctx.mode == RunningMode.DRY_RUN
 
 

@@ -235,7 +235,7 @@ class TestGetAppFromConfig:
 
             f(ctx)  # type: ignore[misc]
 
-            assert f"{step_output}\n" == capfd.readouterr().out
+            ctx.assert_called_with("echo", "echoed value")
 
     class TestSingleShellStepWithDefaultSubcommands:
         @staticmethod

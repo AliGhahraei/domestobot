@@ -5,7 +5,6 @@ from functools import partial
 from logging import FileHandler, getLogger
 from os import getenv
 from pathlib import Path
-from subprocess import CompletedProcess
 from typing import Annotated, Any, Callable, Iterable, List, Mapping, Optional, Union
 
 from pydantic import TypeAdapter, ValidationError
@@ -17,12 +16,11 @@ from xdg import xdg_cache_home, xdg_config_home
 
 from domestobot._config import Config
 from domestobot._core import (
-    CmdRunner,
-    DefaultRunner,
     DomestobotError,
-    DryRunner,
-    RunningMode,
+    RunnerCommand,
+    RunnerGroup,
     dry_run_option,
+    set_obj_to_running_mode_if_unset,
     warning,
 )
 from domestobot._steps import get_steps
@@ -77,10 +75,9 @@ def get_app(config_path: Path) -> Typer:
 
 
 def get_app_from_config(config: Config, name: str = "root") -> Typer:
-    runner_selector = RunnerSelector()
-    commands = get_steps(config.steps, runner_selector.dynamic_mode_runner)
+    commands = get_steps(config.steps)
     params = AppParams(name, config.help_message, commands, config.default_subcommands)
-    return make_app(params, runner_selector.switch_mode)
+    return make_app(params)
 
 
 def read_config(path: Path) -> Config:
@@ -107,47 +104,18 @@ class ConfigNotFoundError(ConfigError):
         super().__init__(f"Config file {path} not found")
 
 
-class RunnerSelector:
-    def __init__(self) -> None:
-        self._mode = RunningMode.DEFAULT
-        self._modes: dict[RunningMode, CmdRunner] = {
-            RunningMode.DEFAULT: DefaultRunner(),
-            RunningMode.DRY_RUN: DryRunner(),
-        }
-
-    @property
-    def dynamic_mode_runner(self) -> CmdRunner:
-        def runner(
-            *args: Union[str, Path],
-            capture_output: bool = False,
-            shell: bool = False,
-        ) -> CompletedProcess[bytes]:
-            return self._modes[self._mode](
-                *args, capture_output=capture_output, shell=shell
-            )
-
-        return runner
-
-    def switch_mode(self, mode: RunningMode) -> None:
-        self._mode = mode
-
-
 def make_app(
-    app_params: "AppParams", select_mode: Callable[[RunningMode], Any]
+    app_params: "AppParams",
 ) -> Typer:
     app = Typer()
 
-    @app.callback(invoke_without_command=True)
-    def main(
-        ctx: Context, dry_run: Annotated[Optional[bool], dry_run_option] = False
-    ) -> None:
-        if dry_run is True:  # https://github.com/tiangolo/typer/issues/279
-            select_mode(RunningMode.DRY_RUN)
-
+    @app.callback(cls=RunnerGroup, invoke_without_command=True)
+    def main(ctx: Context, dry_run: Annotated[bool, dry_run_option] = False) -> None:
+        set_obj_to_running_mode_if_unset(ctx, dry_run=dry_run)
         if ctx.invoked_subcommand is None:
             if app_params.default_subcommands:
-                callbacks = _get_groups_and_commands_callbacks(app, ctx, dry_run)
-                _run_subcommands(callbacks, app_params.default_subcommands)
+                callbacks = _get_groups_and_commands_callbacks(app)
+                _run_subcommands(callbacks, ctx, app_params.default_subcommands)
             else:
                 print(ctx.get_help())
 
@@ -155,7 +123,7 @@ def make_app(
     main.__doc__ = app_params.callback_help
 
     for command in app_params.commands:
-        app.command()(command)
+        app.command(cls=RunnerCommand)(command)
     return app
 
 
@@ -211,15 +179,17 @@ def _get_names_to_callbacks(
     }
 
 
-def _run_subcommands(callbacks: NamesToCallbacks, subcommands: List[str]) -> None:
+def _run_subcommands(
+    callbacks: NamesToCallbacks, ctx: Context, subcommands: List[str]
+) -> None:
     found_callbacks = [
         _search_callbacks(subcommand, callbacks) for subcommand in subcommands
     ]
     for callback in found_callbacks:
-        callback()
+        callback(ctx)
 
 
-def _search_callbacks(name: str, callbacks: NamesToCallbacks) -> Callable[[], Any]:
+def _search_callbacks(name: str, callbacks: NamesToCallbacks) -> Callable[..., Any]:
     try:
         callback = callbacks[name]
     except KeyError as e:

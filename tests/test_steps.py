@@ -20,30 +20,26 @@ def assert_metadata_equal(function: Callable[..., Any], name: str, doc: str) -> 
 
 class TestGetSteps:
     @staticmethod
-    def test_get_steps_creates_empty_steps_from_empty_steps(runner: Mock) -> None:
-        assert get_steps([], runner) == []
+    def test_get_steps_creates_empty_steps_from_empty_steps() -> None:
+        assert get_steps([]) == []
 
     class TestShellDefinition:
         @staticmethod
-        def test_get_steps_creates_shell_definition_with_correct_metadata(
-            runner: Mock,
-            capsys: CaptureFixture[str],
-        ) -> None:
+        def test_get_steps_creates_shell_definition_with_correct_metadata() -> None:
             step = ShellStep("name", "doc", command=["command"])
 
-            function = get_steps([step], runner)[0]
+            function = get_steps([step])[0]
 
             assert_metadata_equal(function, "name", "doc")
 
         @staticmethod
         def test_shell_definition_passes_command_to_runner(
             runner: Mock,
-            capsys: CaptureFixture[str],
         ) -> None:
             step = ShellStep("name", "doc", command=["command", "param"])
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             runner.assert_called_once_with("command", "param")
 
@@ -54,8 +50,8 @@ class TestGetSteps:
         ) -> None:
             step = ShellStep("name", "doc", command=["command"])
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             assert_no_stdout(capsys)
 
@@ -66,21 +62,21 @@ class TestGetSteps:
         ) -> None:
             step = ShellStep("name", "doc", "title", ["command", "param"])
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             assert_stdout("title", capsys)
 
         @staticmethod
         def test_shell_definition_with_multiple_commands_passes_them_to_runner(
-            runner: Mock, capsys: CaptureFixture[str]
+            runner: Mock,
         ) -> None:
             step = ShellStep(
                 "name", "doc", "title", commands=[["command1"], ["command2"]]
             )
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             runner.assert_any_call("command1")
             runner.assert_any_call("command2")
@@ -91,8 +87,8 @@ class TestGetSteps:
         ) -> None:
             step = ShellStep("name", "doc", shell_command="echo hello")
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             runner.assert_called_once_with("echo hello", shell=True)
 
@@ -104,18 +100,15 @@ class TestGetSteps:
                 "name", "doc", "title", shell_commands=["echo hello", "ls"]
             )
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             runner.assert_any_call("echo hello", shell=True)
             runner.assert_any_call("ls", shell=True)
 
     class TestEnvDefinition:
         @staticmethod
-        def test_get_steps_creates_env_definition_with_correct_metadata(
-            runner: Mock,
-            capsys: CaptureFixture[str],
-        ) -> None:
+        def test_get_steps_creates_env_definition_with_correct_metadata() -> None:
             step = ShellStep(
                 "name",
                 "doc",
@@ -124,7 +117,7 @@ class TestGetSteps:
                 ],
             )
 
-            function = get_steps([step], runner)[0]
+            function = get_steps([step])[0]
 
             assert_metadata_equal(function, "name", "doc")
 
@@ -133,7 +126,6 @@ class TestGetSteps:
         def test_env_definition_passes_matching_platform_command_to_runner(
             _: Mock,
             runner: Mock,
-            capsys: CaptureFixture[str],
         ) -> None:
             step = ShellStep(
                 "name",
@@ -144,8 +136,8 @@ class TestGetSteps:
                 ],
             )
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             runner.assert_called_once_with("command")
 
@@ -165,8 +157,8 @@ class TestGetSteps:
                 ],
             )
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             assert_stdout("title", capsys)
 
@@ -184,8 +176,8 @@ class TestGetSteps:
                 ],
             )
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             runner.assert_called_once_with("echo 'hello linux'", shell=True)
 
@@ -211,8 +203,8 @@ class TestGetSteps:
                 ],
             )
 
-            function = get_steps([step], runner)[0]
-            function()
+            function = get_steps([step])[0]
+            function(runner)
 
             runner.assert_any_call("echo 'hello darwin'", shell=True)
             runner.assert_any_call("pwd", shell=True)

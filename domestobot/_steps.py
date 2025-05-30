@@ -3,32 +3,32 @@ from platform import system
 from typing import Callable, Iterable, List
 
 from domestobot._config import CommandStep, EnvStep, ShellStep
-from domestobot._core import CmdRunner, title
+from domestobot._core import CmdRunnerContext, title
 
 
 def get_steps(
-    steps: Iterable[ShellStep], runner: CmdRunner
+    steps: Iterable[ShellStep],
 ) -> List[Callable[..., None]]:
-    return list(chain.from_iterable(_get_definitions(step, runner) for step in steps))
+    return list(chain.from_iterable(_get_definitions(step) for step in steps))
 
 
-def _get_definitions(step: "ShellStep", runner: CmdRunner) -> List[Callable[..., None]]:
-    return _build_wrappers_from_shell_step(step, runner)
+def _get_definitions(step: "ShellStep") -> List[Callable[..., None]]:
+    return _build_wrappers_from_shell_step(step)
 
 
 def _build_wrappers_from_shell_step(
-    step: "ShellStep", runner: CmdRunner
+    step: "ShellStep",
 ) -> List[Callable[..., None]]:
     return [
-        _make_command_step_wrapper(runnable, step.name, step.doc, runner)
+        _make_command_step_wrapper(runnable, step.name, step.doc)
         for runnable in _get_command_steps(step)
     ]
 
 
 def _make_command_step_wrapper(
-    step: "CommandStep", name: str, doc: str, runner: CmdRunner
+    step: "CommandStep", name: str, doc: str
 ) -> Callable[..., None]:
-    def step_wrapper() -> None:
+    def step_wrapper(runner: CmdRunnerContext) -> None:
         if step.title:
             title(step.title)
 
