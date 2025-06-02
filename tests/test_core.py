@@ -84,4 +84,4 @@ class TestSetObjToRunningModeIfUnset:
     ) -> None:
         ctx.obj = "test_obj"
         set_obj_to_running_mode_if_unset(ctx, dry_run=True)
-        assert ctx.obj is RunningMode.DRY_RUN  # type: ignore[comparison-overlap]
+        assert ctx.obj is RunningMode.DRY_RUN
