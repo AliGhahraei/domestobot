@@ -33,7 +33,7 @@ dependencies = [
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
-coverage = "^7.9.1"
+coverage = "^7.9.2"
 mypy = "^1.16.1"
 types-click = "^7.1.8"
 ruff = "^0.12.1"
