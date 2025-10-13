@@ -47,4 +47,4 @@ run = 'mise check' # Adding to depends could make it run before setup finishes
 [tools]
 act = "latest"
 poetry = "latest"
-python = "3.13.7"
+python = "3.14.0"
